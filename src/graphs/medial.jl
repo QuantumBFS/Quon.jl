@@ -4,6 +4,7 @@
 struct Vertex
     id::Int
     coordinate::NTuple{2, Int}
+    meta
 end
 
 struct Face
