@@ -3,50 +3,87 @@
 
 struct Vertex
     id::Int
-    coordinate::NTuple{2, Int}
-    meta
 end
 
 struct Face
     id::Int
 end
 
+Base.convert(::Type{Vertex}, id::Int) = Vertex(id)
+Base.convert(::Type{Face}, id::Int) = Face(id)
+
 struct HalfEdge
-    id::Int
     src::Vertex
     dst::Vertex
 end
 
-struct IncidentVertex
-    v::Vertex
-    incident_edge::Int
-end
-
-struct HalfEdgeTable
-    twins::Dict{Int, HalfEdge} # half edge -> twin id
-    faces::Dict{Int, Face} # half edge -> face
-    nexts::Dict{Int, HalfEdge}
-    prevs::Dict{Int, HalfEdge}
-end
+HalfEdge(src::Int, dst::Int) = HalfEdge(Vertex(src), Vertex(dst))
 
 struct PlanarGraph
-    vertices::Dict{Int, Vertex}
-    faces::Dict{Face, HalfEdge} # face -> edge
-    he_table::HalfEdgeTable
+    vertices::Dict{Vertex, HalfEdge}
+    faces_half_edges::Dict{Face, HalfEdge} # face -> edge
+    half_edges_faces::Dict{HalfEdge, Face} # half edge -> face
+    # nexts::Dict{HalfEdge, HalfEdge}
+    # prevs::Dict{HalfEdge, HalfEdge}
 end
 
-twin(g::PlanarGraph, e::HalfEdge) = g.he_table.twins[e.id]
-face(g::PlanarGraph, e::HalfEdge) = g.he_table.faces[e.id]
-next_half_edge(g::PlanarGraph, e::HalfEdge) = g.he_table.nexts[e.id]
+face(g::PlanarGraph, e::HalfEdge) = g.half_edges_faces[e]
 
-function half_edges(g::PlanarGraph, f::Face)
-    start = g.faces[f]
-    edges = HalfEdge[start]
-    curr = next_half_edge(g, start)
+function planar_rz()
+    vertices = Dict{Vertex, HalfEdge}(
+        Vertex(1) => HalfEdge(1, 9),
+        Vertex(2) => HalfEdge(2, 1),
+        Vertex(3) => HalfEdge(3, 2),
+        Vertex(4) => HalfEdge(4, 3),
+        Vertex(5) => HalfEdge(5, 4),
+        Vertex(6) => HalfEdge(6, 5),
+        Vertex(7) => HalfEdge(7, 6),
+        Vertex(8) => HalfEdge(8, 7),
+        Vertex(9) => HalfEdge(9, 2),
+        Vertex(10) => HalfEdge(10, 3),
+        Vertex(11) => HalfEdge(11, 4),
+    )
 
-    while curr != start
-        push!(edges, curr)
-        curr = next_half_edge(g, curr)
-    end
-    return edges
+    faces_half_edges = Dict{Face, HalfEdge}(
+        Face(1) => HalfEdge(1, 9),
+        Face(2) => HalfEdge(2, 9),
+        Face(3) => HalfEdge(3, 10),
+        Face(4) => HalfEdge(4, 11),
+        Face(5) => HalfEdge(8, 7),
+        Face(6) => HalfEdge(1, 8),
+    )
+
+    half_edges_faces = Dict{HalfEdge, Face}(
+        HalfEdge(2, 1) => Face(1),
+        HalfEdge(1, 9) => Face(1),
+        HalfEdge(9, 2) => Face(1),
+
+        HalfEdge(2, 9) => Face(2),
+        HalfEdge(9, 7) => Face(2),
+        HalfEdge(7, 6) => Face(2),
+        HalfEdge(6, 10) => Face(2),
+        HalfEdge(10, 3) => Face(2),
+        HalfEdge(3, 2) => Face(2),
+
+        HalfEdge(3, 10) => Face(3),
+        HalfEdge(10, 6) => Face(3),
+        HalfEdge(6, 5) => Face(3),
+        HalfEdge(5, 11) => Face(3),
+        HalfEdge(11, 4) => Face(3),
+        HalfEdge(4, 3) => Face(3),
+
+        HalfEdge(4, 11) => Face(4),
+        HalfEdge(11, 5) => Face(4),
+        HalfEdge(5, 4) => Face(4),
+
+        HalfEdge(8, 7) => Face(5),
+        HalfEdge(7, 9) => Face(5),
+        HalfEdge(9, 8) => Face(5),
+
+        HalfEdge(1, 8) => Face(6),
+        HalfEdge(8, 9) => Face(6),
+        HalfEdge(9, 1) => Face(6),
+    )
+
+    return PlanarGraph(vertices, faces_half_edges, half_edges_faces)
 end
