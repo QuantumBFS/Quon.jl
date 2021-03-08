@@ -23,8 +23,33 @@ struct PlanarGraph
     vertices::Dict{Vertex, HalfEdge}
     faces_half_edges::Dict{Face, HalfEdge} # face -> edge
     half_edges_faces::Dict{HalfEdge, Face} # half edge -> face
-    # nexts::Dict{HalfEdge, HalfEdge}
-    # prevs::Dict{HalfEdge, HalfEdge}
+    nexts::Dict{HalfEdge, HalfEdge}
+    prevs::Dict{HalfEdge, HalfEdge}
+end
+
+function PlanarGraph(vs::Dict{Vertex, HalfEdge}, f2he::Dict{Face, HalfEdge}, he2f::Dict{HalfEdge, Face})
+    hes = keys(he2f)
+    fs = Dict{Face, Vector{HalfEdge}}()
+    for (he, f) in he2f
+        if haskey(fs, f)
+            push!(fs[f], he)
+        else
+            fs[f] = [he]
+        end
+    end
+    nexts = Dict{HalfEdge, HalfEdge}()
+    prevs = Dict{HalfEdge, HalfEdge}()
+    for he in hes
+        f_he = he2f[he]
+        for nhe in fs[f_he]
+            if nhe.src == he.dst
+                nexts[he] = nhe
+                prevs[nhe] = he
+                break
+            end
+        end
+    end
+    return PlanarGraph(vs, f2he, he2f, nexts, prevs)
 end
 
 face(g::PlanarGraph, e::HalfEdge) = g.half_edges_faces[e]
