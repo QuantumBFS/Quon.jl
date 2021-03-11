@@ -21,21 +21,28 @@ function vertices_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Ve
     vertices_map_b = Dict{Vertex, Vertex}() # original -> new
 
     n_vertices = 1
-    for v in keys(a.vertices)
-        vertices_map_a[v] = Vertex(n_vertices)
+    for k in 1:length(Ia)
+        v_a = Ia[k]
+        v_b = Ib[k]
+        vertices_map_a[v_a] = Vertex(n_vertices)
+        vertices_map_b[v_b] = Vertex(n_vertices)
         n_vertices += 1
     end
 
-    for v in keys(b.vertices)
-        idx = findfirst(isequal(v), Ib)
-        
-        if idx === nothing
-            vertices_map_b[v] = Vertex(n_vertices)
+    for v in sort!(collect(keys(a.vertices)), by = x -> x.id)
+        if !haskey(vertices_map_a, v)
+            vertices_map_a[v] = Vertex(n_vertices)
             n_vertices += 1
-        else
-            vertices_map_b[v] = vertices_map_a[Ia[idx]]
         end
     end
+
+    for v in sort!(collect(keys(b.vertices)), by = x -> x.id)
+        if !haskey(vertices_map_b, v)
+            vertices_map_b[v] = Vertex(n_vertices)
+            n_vertices += 1
+        end
+    end
+
     return vertices_map_a, vertices_map_b
 end
 
@@ -55,14 +62,14 @@ function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vecto
         n_face += 1
     end
 
-    for f in keys(a.faces_half_edges)
+    for f in sort!(collect(keys(a.faces_half_edges)), by = x -> x.id)
         if !haskey(faces_map_a, f)
             faces_map_a[f] = Face(n_face)
             n_face += 1
         end
     end
 
-    for f in keys(b.faces_half_edges)
+    for f in sort!(collect(keys(b.faces_half_edges)), by = x -> x.id)
         if !haskey(faces_map_b, f)
             faces_map_b[f] = Face(n_face)
             n_face += 1
@@ -72,10 +79,10 @@ function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vecto
     return faces_map_a, faces_map_b
 end
 
-function update_half_edges_faces!(half_edges_faces::Dict{HalfEdge, Face}, a::PlanarGraph, Ia::Vector{Vertex}, faces_map_a::Dict{Face, Face})
+function update_half_edges_faces!(half_edges_faces::Dict{HalfEdge, Face}, a::PlanarGraph, Ia::Vector{Vertex}, vertices_map_a::Dict{Vertex, Vertex}, faces_map_a::Dict{Face, Face})
     for (he, f) in a.half_edges_faces
         if !(he.src in Ia && he.dst in Ia)
-            new_he = HalfEdge(he.src, he.dst)
+            new_he = HalfEdge(vertices_map_a[he.src], vertices_map_a[he.dst])
             half_edges_faces[new_he] = faces_map_a[f]
         end
     end
@@ -85,10 +92,10 @@ end
     @boundscheck Ia, Ib = check_indices(a, b, Ia, Ib)
     vertices_map_a, vertices_map_b = vertices_map(a, b, Ia, Ib) # original -> new
     faces_map_a, faces_map_b = faces_map(a, b, Ia, Ib)
-    
+
     half_edges_faces = Dict{HalfEdge, Face}()
-    update_half_edges_faces!(half_edges_faces, a, Ia, faces_map_a)
-    update_half_edges_faces!(half_edges_faces, b, Ib, faces_map_b)
+    update_half_edges_faces!(half_edges_faces, a, Ia, vertices_map_a, faces_map_a)
+    update_half_edges_faces!(half_edges_faces, b, Ib, vertices_map_b, faces_map_b)
 
     return PlanarGraph(half_edges_faces)
 end
