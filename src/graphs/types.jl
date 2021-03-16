@@ -68,4 +68,27 @@ end
 
 face(g::PlanarGraph, e::HalfEdge) = g.half_edges_faces[e]
 nv(g::PlanarGraph) = length(keys(g.vertices))
+twin(e::HalfEdge) = HalfEdge(e.dst, e.src)
 
+"""
+    half_edges(g)
+
+Returns all half edges in a planar graph `g`.
+"""
+half_edges(g::PlanarGraph) = collect(keys(g.half_edges_faces))
+
+"""
+    edges(g)
+
+Return all whole edges in a planar graph `g`.
+"""
+function edges(g::PlanarGraph)
+    es = Tuple{Vertex, Vertex}[]
+    hes = half_edges(g)
+    for he in hes
+        if twin(he) in hes && !(twin(he) in es)
+            push!(es, (he.src, he.dst))
+        end
+    end
+    return es
+end
