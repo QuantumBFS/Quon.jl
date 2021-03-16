@@ -10,8 +10,6 @@ function plot(qo::QuonGraph)
         v[2] < y_min && (y_min = v[2])
         v[2] > y_max && (y_max = v[2])
     end
-    @show (x_min, x_max)
-    @show (y_min, y_max)
     x_len = x_max - x_min + 1
     y_len = y_max - y_min + 1
     normal_pos = Dict()

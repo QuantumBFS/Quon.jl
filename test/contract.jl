@@ -26,3 +26,18 @@ end
     rzrx = contract(a, b, Ia, Ib)
     length(rzrx.half_edges_faces) == 42
 end
+
+@testset "edges" begin
+    edges(a)
+end
+
+a = quon_rz()
+b = quon_rx()
+Ia = Vertex[9, 8, 7, 6, 5, 13]
+Ib = Vertex[9, 1, 2, 3, 4, 13]
+
+plot(a)
+plot(b)
+
+c = contract(a, b, Ia, Ib)
+plot(c)
