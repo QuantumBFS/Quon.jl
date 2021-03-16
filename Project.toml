@@ -3,6 +3,9 @@ uuid = "c06e219a-25ab-40e9-981e-daf6c65a72de"
 authors = ["Roger-Luo <rogerluo.rl18@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
+
 [compat]
 julia = "1.6"
 
