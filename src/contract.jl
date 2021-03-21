@@ -99,3 +99,34 @@ end
 
     return PlanarGraph(half_edges_faces)
 end
+
+function contract(a::QuonGraph, b::QuonGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
+    Ia, Ib = check_indices(a.pg, b.pg, Ia, Ib)
+    vmap_a, vmap_b = vertices_map(a.pg, b.pg, Ia, Ib)
+    fmap_a, fmap_b = faces_map(a.pg, b.pg, Ia, Ib)
+
+    new_pg = contract(a.pg, b.pg, Ia, Ib)
+    new_genus = Set{Face}()
+    new_pos = Dict{Vertex, Tuple{Float64, Float64}}()
+    for f in a.genus
+        push!(new_genus, fmap_a[f])
+    end
+    for f in b.genus
+        push!(new_genus, fmap_b[f])
+    end
+    for (v, p) in a.pos
+        new_pos[vmap_a[v]] = p
+    end
+    o_b = b.pos[Ib[2]]
+    o_a = a.pos[Ia[2]]
+    for (v, p) in b.pos
+        if !(v in Ib)
+            new_pos[vmap_b[v]] = (p[1] - o_b[1] + o_a[1], p[2] - o_b[2] + o_a[2])
+        end
+    end
+    new_pos[vmap_a[Ia[1]]] = ((a.pos[Ia[1]][1] + b.pos[Ib[1]][1] - o_b[1] + o_a[1])/2, 
+                                (a.pos[Ia[1]][2] + b.pos[Ib[1]][2] - o_b[2] + o_a[2])/2)
+    new_pos[vmap_a[Ia[end]]] = ((a.pos[Ia[end]][1] + b.pos[Ib[end]][1] - o_b[1] + o_a[1])/2, 
+                                (a.pos[Ia[end]][2] + b.pos[Ib[end]][2] - o_b[2] + o_a[2])/2)
+    return QuonGraph(new_pg, new_pos, new_genus)
+end
