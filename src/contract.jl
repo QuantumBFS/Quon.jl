@@ -29,14 +29,14 @@ function vertices_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Ve
         n_vertices += 1
     end
 
-    for v in sort!(collect(keys(a.vertices)), by = x -> x.id)
+    for v in keys(a.vertices)
         if !haskey(vertices_map_a, v)
             vertices_map_a[v] = Vertex(n_vertices)
             n_vertices += 1
         end
     end
 
-    for v in sort!(collect(keys(b.vertices)), by = x -> x.id)
+    for v in keys(b.vertices)
         if !haskey(vertices_map_b, v)
             vertices_map_b[v] = Vertex(n_vertices)
             n_vertices += 1
@@ -62,14 +62,14 @@ function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vecto
         n_face += 1
     end
 
-    for f in sort!(collect(keys(a.faces_half_edges)), by = x -> x.id)
+    for f in keys(a.faces_half_edges)
         if !haskey(faces_map_a, f)
             faces_map_a[f] = Face(n_face)
             n_face += 1
         end
     end
 
-    for f in sort!(collect(keys(b.faces_half_edges)), by = x -> x.id)
+    for f in keys(b.faces_half_edges)
         if !haskey(faces_map_b, f)
             faces_map_b[f] = Face(n_face)
             n_face += 1
