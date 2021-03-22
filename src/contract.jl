@@ -1,6 +1,6 @@
 function check_indices(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
     @assert length(Ia) == length(Ib) "length of indices does not match"
-    if !haskey(a.half_edges_faces, HalfEdge(Ia[1], Ia[2]))
+    if is_boundary(a, HalfEdge(Ia[1], Ia[2]))
         Ia = reverse(Ia)
         Ib = reverse(Ib)
     end
@@ -9,7 +9,8 @@ function check_indices(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::V
     for k in 1:n-1
         he_a = HalfEdge(Ia[k], Ia[k+1])
         he_b = HalfEdge(Ib[k+1], Ib[k])
-        he_a in keys(a.half_edges_faces) && he_b in keys(b.half_edges_faces) ||
+        @show he_a, he_b
+        !is_boundary(a, he_a) && !is_boundary(b, he_b) ||
             error("invalid contraction indices, the indices" *
                 " order might be incorrect, or contains non-open edge")
     end
@@ -29,14 +30,14 @@ function vertices_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Ve
         n_vertices += 1
     end
 
-    for v in keys(a.vertices)
+    for v in vertices(a)
         if !haskey(vertices_map_a, v)
             vertices_map_a[v] = Vertex(n_vertices)
             n_vertices += 1
         end
     end
 
-    for v in keys(b.vertices)
+    for v in vertices(b)
         if !haskey(vertices_map_b, v)
             vertices_map_b[v] = Vertex(n_vertices)
             n_vertices += 1
@@ -54,22 +55,24 @@ function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vecto
     for k in 1:length(Ia)-1
         he_a = HalfEdge(Ia[k], Ia[k+1])
         he_b = HalfEdge(Ib[k+1], Ib[k])
-        fa = a.half_edges_faces[he_a]
-        fb = b.half_edges_faces[he_b]
+        fa = face(a, he_a)
+        fb = face(b, he_b)
         # give f a new id
         faces_map_a[fa] = Face(n_face)
         faces_map_b[fb] = Face(n_face)
         n_face += 1
     end
 
-    for f in keys(a.faces_half_edges)
+    faces_map_a[Face(0)] = Face(0)
+    for f in faces(a)
         if !haskey(faces_map_a, f)
             faces_map_a[f] = Face(n_face)
             n_face += 1
         end
     end
-
-    for f in keys(b.faces_half_edges)
+    
+    faces_map_b[Face(0)] = Face(0)
+    for f in faces(b)
         if !haskey(faces_map_b, f)
             faces_map_b[f] = Face(n_face)
             n_face += 1
@@ -80,7 +83,8 @@ function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vecto
 end
 
 function update_half_edges_faces!(half_edges_faces::Dict{HalfEdge, Face}, a::PlanarGraph, Ia::Vector{Vertex}, vertices_map_a::Dict{Vertex, Vertex}, faces_map_a::Dict{Face, Face})
-    for (he, f) in a.half_edges_faces
+    for he in half_edges(a)
+        f = face(a, he)
         if !(he.src in Ia && he.dst in Ia)
             new_he = HalfEdge(vertices_map_a[he.src], vertices_map_a[he.dst])
             half_edges_faces[new_he] = faces_map_a[f]

@@ -51,10 +51,98 @@ src(g::PlanarGraph, e::HalfEdge) = src(e)
 dst(g::PlanarGraph, e::HalfEdge) = dst(e)
 twin(g::PlanarGraph, e::HalfEdge) = twin(e)
 
+"""
+    find_half_edge(g, v)
+
+Find an out half edge of a vertex.
+"""
+find_half_edge(g::PlanarGraph, v::Vertex) = g.vertices[v]
+
+"""
+    find_half_edge(g, f)
+
+Find a half edge around a face.
+"""
+find_half_edge(g::PlanarGraph, f::Face) = g.faces_half_edges[f]
+
+"""
+    next(g, he)
+
+Returns the next half edge of a half edge.
+"""
 next(g::PlanarGraph, e::HalfEdge) = g.nexts[e]
+
+"""
+    prev(g, he)
+
+Returns the previous half edge of a half edge.
+"""
 prev(g::PlanarGraph, e::HalfEdge) = g.prevs[e]
 σ(g::PlanarGraph, e::HalfEdge) = twin(g, prev(g, e))
 σ_inv(g::PlanarGraph, e::HalfEdge) = next(g, twin(g, e))
+
+has_half_edge(g::PlanarGraph, he::HalfEdge) = haskey(g.half_edges_faces, he)
+has_half_edge(g::PlanarGraph, s::Integer, d::Integer) = has_half_edge(g, HalfEdge(s, d))
+has_vertex(g::PlanarGraph, v::Vertex) = haskey(g.vertices, v)
+has_vertex(g::PlanarGraph, v::Integer) = has_vertex(g, Vertex(v))
+
+"""
+    is_boundary(g, he)
+
+Check whether a half edge `he` is on the boundary of a planar graph `g`.
+"""
+is_boundary(g::PlanarGraph, he::HalfEdge) = face(g, he) == Face(0)
+
+"""
+    trace_face(g, f)
+
+Returns a tuple containing all half edges and all vertices around a face.
+"""
+function trace_face(g::PlanarGraph, f::Face)
+    starting_he = find_half_edge(g, f)
+    hes = [starting_he]
+    vs = [src(starting_he)]
+
+    he = next(g, starting_he)
+    while he != starting_he
+        push!(hes, he)
+        push!(vs, src(he))
+        he = next(g, he)
+    end
+
+    return hes, vs
+end
+trace_face(g::PlanarGraph, f::Integer) = trace_face(g, Face(f))
+
+"""
+    trace_vertex(g, v)
+
+Returns a tuple containing all out half edges and all out neighbors from a vertex.
+"""
+function trace_vertex(g::PlanarGraph, v::Vertex)
+    starting_he = find_half_edge(g, v)
+    hes = [starting_he]
+    out_nbs = [dst(starting_he)]
+
+    he = σ(g, starting_he)
+    while he != starting_he
+        push!(hes, he)
+        push!(out_nbs, dst(he))
+        he = σ(g, he)
+    end
+
+    return hes, out_nbs
+end
+trace_vertex(g::PlanarGraph, v::Integer) = trace_vertex(g, Vertex(v))
+
+"""
+    vertices(g)
+
+Returns all vertices in a planar graph.
+"""
+vertices(g::PlanarGraph) = collect(keys(g.vertices))
+
+faces(g::PlanarGraph) = collect(keys(g.faces_half_edges))
 
 """
     half_edges(g)
@@ -72,7 +160,7 @@ function edges(g::PlanarGraph)
     es = Tuple{Vertex, Vertex}[]
     hes = half_edges(g)
     for he in hes
-        if twin(he) in hes && !(twin(he) in es)
+        if src(he).id < dst(he).id
             push!(es, (he.src, he.dst))
         end
     end
@@ -112,6 +200,7 @@ function planar_rz()
     )
 
     faces_half_edges = Dict{Face, HalfEdge}(
+        Face(0) => HalfEdge(1, 2),
         Face(1) => HalfEdge(1, 10),
         Face(2) => HalfEdge(2, 10),
         Face(3) => HalfEdge(3, 11),
@@ -121,6 +210,17 @@ function planar_rz()
     )
 
     half_edges_faces = Dict{HalfEdge, Face}(
+        HalfEdge(1, 2) => Face(0),
+        HalfEdge(2, 3) => Face(0),
+        HalfEdge(3, 4) => Face(0),
+        HalfEdge(4, 13) => Face(0),
+        HalfEdge(13, 5) => Face(0),
+        HalfEdge(5, 6) => Face(0),
+        HalfEdge(6, 7) => Face(0),
+        HalfEdge(7, 8) => Face(0),
+        HalfEdge(8, 9) => Face(0),
+        HalfEdge(9, 1) => Face(0),
+
         HalfEdge(2, 1) => Face(1),
         HalfEdge(1, 10) => Face(1),
         HalfEdge(10, 2) => Face(1),
@@ -190,6 +290,7 @@ function planar_rx()
     )
 
     faces_half_edges = Dict{Face, HalfEdge}(
+        Face(0) => HalfEdge(1, 2),
         Face(1) => HalfEdge(1, 9),
         Face(2) => HalfEdge(2, 1),
         Face(3) => HalfEdge(3, 2),
@@ -199,6 +300,17 @@ function planar_rx()
     )
 
     half_edges_faces = Dict{HalfEdge, Face}(
+        HalfEdge(1, 2) => Face(0),
+        HalfEdge(2, 3) => Face(0),
+        HalfEdge(3, 4) => Face(0),
+        HalfEdge(4, 13) => Face(0),
+        HalfEdge(13, 5) => Face(0),
+        HalfEdge(5, 6) => Face(0),
+        HalfEdge(6, 7) => Face(0),
+        HalfEdge(7, 8) => Face(0),
+        HalfEdge(8, 9) => Face(0),
+        HalfEdge(9, 1) => Face(0),
+
         HalfEdge(1, 9) => Face(1),
         HalfEdge(9, 8) => Face(1),
         HalfEdge(8, 10) => Face(1),

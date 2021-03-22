@@ -1,5 +1,6 @@
 using Test
 using Quon
+using Quon: vertices_map, faces_map
 
 a = planar_rz()
 b = planar_rx()

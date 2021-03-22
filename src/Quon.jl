@@ -1,15 +1,15 @@
 module Quon
 
-export PlanarGraph, HalfEdgeTable, Vertex, Face, HalfEdge,
+export PlanarGraph, Vertex, Face, HalfEdge,
     # interfaces
-    half_edges,
-    twin,
-    face,
+    half_edges, find_half_edge,
+    twin, nv, src, dst, twin, next, prev, face, σ, σ_inv,
+    has_vertex, has_half_edge, 
+    is_boundary, trace_face, trace_vertex, 
     contract,
-    vertices_map,
-    faces_map,
+    half_edges, vertices,
     edges,
-    half_edges,
+
     # predefined
     planar_rx,
     planar_rz
