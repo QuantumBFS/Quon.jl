@@ -1,3 +1,18 @@
+struct TaitEdge
+    src::Face
+    passby::Vertex
+    dst::Face
+end
+
+struct QuonPhase
+    phase
+    direction
+end
+
+struct TaitGraph
+    edges::Dict{TaitEdge, QuonPhase}
+end
+
 struct QuonGraph
     pg::PlanarGraph
     pos::Dict{Vertex, Tuple{Float64, Float64}}

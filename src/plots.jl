@@ -18,9 +18,17 @@ function plot(qo::QuonGraph)
     end
 
     es = []
-    for e in edges(qo.pg)
-        push!(es, [normal_pos[e[1]], normal_pos[e[2]]])
+    bds = []
+    for he in half_edges(qo.pg)
+        if src(he).id < dst(he).id 
+            if !is_boundary(qo.pg, he) && !is_boundary(qo.pg, twin(he))
+                push!(es, [normal_pos[src(he)], normal_pos[dst(he)]])
+            else
+                push!(bds, [normal_pos[src(he)], normal_pos[dst(he)]])
+            end
+        end
     end
+    ct_bds = (context(), line(bds), stroke("green"), linewidth(1mm))
     ct_es = (context(), line(es), stroke("white"), linewidth(1mm))
 
     vs = collect(keys(qo.pos))
@@ -28,6 +36,19 @@ function plot(qo::QuonGraph)
     vs_x = [normal_pos[v][1] for v in vs]
     vs_y = [normal_pos[v][2] for v in vs]
     ct_vs = (context(), text(vs_x, vs_y, vs_label), stroke("red"))
-    return compose(context(), ct_vs, ct_es
+
+    fs = faces(qo.pg)
+    deleteat!(fs, findfirst(isequal(Face(0)), fs))
+    fs_label = ["$(f.id)" for f in fs]
+    fs_x = []
+    fs_y = []
+    for f in fs
+        vs_f = trace_face(qo.pg, f)[2]
+        push!(fs_x, sum([normal_pos[v][1] for v in vs_f])/length(vs_f))
+        push!(fs_y, sum([normal_pos[v][2] for v in vs_f])/length(vs_f))
+    end
+    ct_fs = (context(), text(fs_x, fs_y, fs_label), stroke("blue"))
+
+    return compose(context(), ct_fs, ct_vs, ct_es, ct_bds
     )
 end
