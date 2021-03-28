@@ -14,7 +14,7 @@ struct TaitGraph
 end
 
 struct QuonGraph
-    pg::PlanarGraph
+    pg::MedialGraph
     pos::Dict{Vertex, Tuple{Float64, Float64}}
     genus::Set{Face}
     # meta    # recording params...

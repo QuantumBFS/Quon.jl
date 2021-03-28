@@ -1,4 +1,4 @@
-function check_indices(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
+function check_indices(a::MedialGraph, b::MedialGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
     @assert length(Ia) == length(Ib) "length of indices does not match"
     if is_boundary(a, HalfEdge(Ia[1], Ia[2]))
         Ia = reverse(Ia)
@@ -17,7 +17,7 @@ function check_indices(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::V
     return Ia, Ib
 end
 
-function vertices_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
+function vertices_map(a::MedialGraph, b::MedialGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
     vertices_map_a = Dict{Vertex, Vertex}() # original -> new
     vertices_map_b = Dict{Vertex, Vertex}() # original -> new
 
@@ -47,7 +47,7 @@ function vertices_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Ve
     return vertices_map_a, vertices_map_b
 end
 
-function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
+function faces_map(a::MedialGraph, b::MedialGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
     faces_map_a = Dict{Face, Face}()
     faces_map_b = Dict{Face, Face}() 
     
@@ -82,7 +82,7 @@ function faces_map(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vecto
     return faces_map_a, faces_map_b
 end
 
-function update_half_edges_faces!(half_edges_faces::Dict{HalfEdge, Face}, a::PlanarGraph, Ia::Vector{Vertex}, vertices_map_a::Dict{Vertex, Vertex}, faces_map_a::Dict{Face, Face})
+function update_half_edges_faces!(half_edges_faces::Dict{HalfEdge, Face}, a::MedialGraph, Ia::Vector{Vertex}, vertices_map_a::Dict{Vertex, Vertex}, faces_map_a::Dict{Face, Face})
     for he in half_edges(a)
         f = face(a, he)
         if !(he.src in Ia && he.dst in Ia)
@@ -92,7 +92,7 @@ function update_half_edges_faces!(half_edges_faces::Dict{HalfEdge, Face}, a::Pla
     end
 end
 
-@inline function contract(a::PlanarGraph, b::PlanarGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
+@inline function contract(a::MedialGraph, b::MedialGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
     @boundscheck Ia, Ib = check_indices(a, b, Ia, Ib)
     vertices_map_a, vertices_map_b = vertices_map(a, b, Ia, Ib) # original -> new
     faces_map_a, faces_map_b = faces_map(a, b, Ia, Ib)
@@ -101,7 +101,7 @@ end
     update_half_edges_faces!(half_edges_faces, a, Ia, vertices_map_a, faces_map_a)
     update_half_edges_faces!(half_edges_faces, b, Ib, vertices_map_b, faces_map_b)
 
-    return PlanarGraph(half_edges_faces)
+    return MedialGraph(half_edges_faces)
 end
 
 function contract(a::QuonGraph, b::QuonGraph, Ia::Vector{Vertex}, Ib::Vector{Vertex})
