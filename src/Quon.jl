@@ -33,4 +33,6 @@ include("graphs/tait.jl")
 # include("contract.jl")
 # include("plots.jl")
 
+include("utils/yang_baxter.jl")
+
 end
