@@ -1,4 +1,7 @@
+using Quon
 using Test
+
+@test yang_baxter(pi/2*im, pi/2*im, pi/2*im) == (pi/2*im, pi/2*im, pi/2*im)
 
 function check_inv(a, b, c)
     theta = [a,b,c] * im

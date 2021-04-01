@@ -1,5 +1,8 @@
 module Quon
 
+include("utils/yang_baxter.jl")
+export yang_baxter, yang_baxter_inv, change_direction
+
 # export PlanarGraph, Vertex, Face, HalfEdge, 
 #     # interfaces
 #     half_edges, find_half_edge,
@@ -16,6 +19,7 @@ module Quon
 
 # export QuonGraph, quon_rx, quon_rz
 
+include("graphs/tait.jl")
 export TaitGraph, Edge,
     # APIs
     nv, ne, src, dst, edge, neighbors,
@@ -28,11 +32,8 @@ export TaitGraph, Edge,
 
 # include("graphs/types.jl")
 # include("graphs/planar.jl")
-include("graphs/tait.jl")
 # include("quon_graph.jl")
 # include("contract.jl")
 # include("plots.jl")
-
-include("utils/yang_baxter.jl")
 
 end
