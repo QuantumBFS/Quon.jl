@@ -35,6 +35,9 @@ function yang_baxter(α1, β1, γ1)
     
     return α2, β2, γ2
 end
+
+yang_baxter(pi*im, pi/2*im, pi*im)
+
 function yang_baxter_inv(α2, β2, γ2)
     a2 = change_direction(α2)
     b2 = change_direction(β2)

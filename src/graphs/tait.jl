@@ -1,6 +1,11 @@
-struct Phase{T <: Number}
+mutable struct Phase{T <: Number}
     param::T
     isparallel::Bool
+end
+function change_direction!(p::Phase)
+    p.param = change_direction(p.param)
+    p.isparallel = !p.isparallel
+    return p
 end
 
 # src < dst
@@ -66,6 +71,7 @@ end
 Base.copy(G::TaitGraph) =
     TaitGraph(copy(G.adjlist), copy(G.edges), copy(G.phases), copy(G.boundaries), G.vertex_max, G.edge_max)
 
+change_direction!(g::TaitGraph, e_id::Integer) = change_direction!(g.phases[e_id])
 
 function tait_rx(θ::T) where T
     adjlist = Dict{Int, Vector{Int}}(
