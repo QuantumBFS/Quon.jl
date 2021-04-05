@@ -1,7 +1,7 @@
 module Quon
 
 include("utils/yang_baxter.jl")
-export yang_baxter, yang_baxter_inv, change_direction!
+export yang_baxter_param, yang_baxter_param_inv, change_direction!
 
 # export PlanarGraph, Vertex, Face, HalfEdge, 
 #     # interfaces

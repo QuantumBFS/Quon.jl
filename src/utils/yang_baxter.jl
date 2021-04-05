@@ -3,7 +3,7 @@
 change_direction(α) = log(-tanh(α/2))
 
 """
-    yang_baxter(α1, β1, γ1)
+    yang_baxter_param(α1, β1, γ1)
 
 Return α2, β2, γ2 according to the Yang-Baxter equation:
 
@@ -19,7 +19,7 @@ Return α2, β2, γ2 according to the Yang-Baxter equation:
      /  \\     |       |     /  \\
     /    \\    |       |    /    \\
 """
-function yang_baxter(α1, β1, γ1)
+function yang_baxter_param(α1, β1, γ1)
     s1 = (α1+γ1)/2
     m1 = (α1-γ1)/2
     tanh_s2 = tanh(β1/2)*cosh(m1)/cosh(s1)
@@ -36,12 +36,10 @@ function yang_baxter(α1, β1, γ1)
     return α2, β2, γ2
 end
 
-yang_baxter(pi*im, pi/2*im, pi*im)
-
-function yang_baxter_inv(α2, β2, γ2)
+function yang_baxter_param_inv(α2, β2, γ2)
     a2 = change_direction(α2)
     b2 = change_direction(β2)
-    α1, c1, b1 = yang_baxter(b2, a2, γ2)
+    α1, c1, b1 = yang_baxter_param(b2, a2, γ2)
     β1 = change_direction(b1)
     γ1 = change_direction(c1)
     return α1, β1, γ1

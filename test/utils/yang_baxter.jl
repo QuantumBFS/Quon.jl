@@ -1,12 +1,12 @@
 using Quon
 using Test
 
-@test yang_baxter(pi/2*im, pi/2*im, pi/2*im) == (pi/2*im, pi/2*im, pi/2*im)
+@test yang_baxter_param(pi/2*im, pi/2*im, pi/2*im) == (pi/2*im, pi/2*im, pi/2*im)
 
 function check_inv(a, b, c)
     theta = [a,b,c] * im
     
-    phi = yang_baxter_inv(yang_baxter(theta[1], theta[2], theta[3])...)
+    phi = yang_baxter_param_inv(yang_baxter_param(theta[1], theta[2], theta[3])...)
     phi = imag.([phi...])
     return (Rz(phi[3])*Rx(phi[2])*Rz(phi[1]))^-1 * Rz(c)*Rx(b)*Rz(a) ≈ [1 0; 0 1]
 end
