@@ -1,5 +1,5 @@
 # TODO: check the half edges are in reverse time order
-struct PlanarGraph
+struct MedialGraph
     vertices::Dict{Vertex, HalfEdge}
     faces_half_edges::Dict{Face, HalfEdge} # face -> edge
     half_edges_faces::Dict{HalfEdge, Face} # half edge -> face
@@ -7,7 +7,7 @@ struct PlanarGraph
     prevs::Dict{HalfEdge, HalfEdge}
 end
 
-function PlanarGraph(half_edges_faces::Dict{HalfEdge, Face})
+function MedialGraph(half_edges_faces::Dict{HalfEdge, Face})
     faces_half_edges = Dict{Face, HalfEdge}()
     for (he, f) in half_edges_faces
         haskey(faces_half_edges, f) || (faces_half_edges[f] = he)
@@ -17,10 +17,10 @@ function PlanarGraph(half_edges_faces::Dict{HalfEdge, Face})
     for he in keys(half_edges_faces)
         haskey(vertices, he.src) || (vertices[he.src] = he)
     end
-    return PlanarGraph(vertices, faces_half_edges, half_edges_faces)
+    return MedialGraph(vertices, faces_half_edges, half_edges_faces)
 end
 
-function PlanarGraph(vs::Dict{Vertex, HalfEdge}, f2he::Dict{Face, HalfEdge}, he2f::Dict{HalfEdge, Face})
+function MedialGraph(vs::Dict{Vertex, HalfEdge}, f2he::Dict{Face, HalfEdge}, he2f::Dict{HalfEdge, Face})
     hes = keys(he2f)
     fs = Dict{Face, Vector{HalfEdge}}()
     for (he, f) in he2f
@@ -42,63 +42,63 @@ function PlanarGraph(vs::Dict{Vertex, HalfEdge}, f2he::Dict{Face, HalfEdge}, he2
             end
         end
     end
-    return PlanarGraph(vs, f2he, he2f, nexts, prevs)
+    return MedialGraph(vs, f2he, he2f, nexts, prevs)
 end
 
-face(g::PlanarGraph, e::HalfEdge) = g.half_edges_faces[e]
-nv(g::PlanarGraph) = length(keys(g.vertices))
-src(g::PlanarGraph, e::HalfEdge) = src(e)
-dst(g::PlanarGraph, e::HalfEdge) = dst(e)
-twin(g::PlanarGraph, e::HalfEdge) = twin(e)
+face(g::MedialGraph, e::HalfEdge) = g.half_edges_faces[e]
+nv(g::MedialGraph) = length(keys(g.vertices))
+src(g::MedialGraph, e::HalfEdge) = src(e)
+dst(g::MedialGraph, e::HalfEdge) = dst(e)
+twin(g::MedialGraph, e::HalfEdge) = twin(e)
 
 """
     find_half_edge(g, v)
 
 Find an out half edge of a vertex.
 """
-find_half_edge(g::PlanarGraph, v::Vertex) = g.vertices[v]
+find_half_edge(g::MedialGraph, v::Vertex) = g.vertices[v]
 
 """
     find_half_edge(g, f)
 
 Find a half edge around a face.
 """
-find_half_edge(g::PlanarGraph, f::Face) = g.faces_half_edges[f]
+find_half_edge(g::MedialGraph, f::Face) = g.faces_half_edges[f]
 
 """
     next(g, he)
 
 Returns the next half edge of a half edge.
 """
-next(g::PlanarGraph, e::HalfEdge) = g.nexts[e]
+next(g::MedialGraph, e::HalfEdge) = g.nexts[e]
 
 """
     prev(g, he)
 
 Returns the previous half edge of a half edge.
 """
-prev(g::PlanarGraph, e::HalfEdge) = g.prevs[e]
-σ(g::PlanarGraph, e::HalfEdge) = twin(g, prev(g, e))
-σ_inv(g::PlanarGraph, e::HalfEdge) = next(g, twin(g, e))
+prev(g::MedialGraph, e::HalfEdge) = g.prevs[e]
+σ(g::MedialGraph, e::HalfEdge) = twin(g, prev(g, e))
+σ_inv(g::MedialGraph, e::HalfEdge) = next(g, twin(g, e))
 
-has_half_edge(g::PlanarGraph, he::HalfEdge) = haskey(g.half_edges_faces, he)
-has_half_edge(g::PlanarGraph, s::Integer, d::Integer) = has_half_edge(g, HalfEdge(s, d))
-has_vertex(g::PlanarGraph, v::Vertex) = haskey(g.vertices, v)
-has_vertex(g::PlanarGraph, v::Integer) = has_vertex(g, Vertex(v))
+has_half_edge(g::MedialGraph, he::HalfEdge) = haskey(g.half_edges_faces, he)
+has_half_edge(g::MedialGraph, s::Integer, d::Integer) = has_half_edge(g, HalfEdge(s, d))
+has_vertex(g::MedialGraph, v::Vertex) = haskey(g.vertices, v)
+has_vertex(g::MedialGraph, v::Integer) = has_vertex(g, Vertex(v))
 
 """
     is_boundary(g, he)
 
 Check whether a half edge `he` is on the boundary of a planar graph `g`.
 """
-is_boundary(g::PlanarGraph, he::HalfEdge) = face(g, he) == Face(0)
+is_boundary(g::MedialGraph, he::HalfEdge) = face(g, he) == Face(0)
 
 """
     trace_face(g, f)
 
 Returns a tuple containing all half edges and all vertices around a face.
 """
-function trace_face(g::PlanarGraph, f::Face)
+function trace_face(g::MedialGraph, f::Face)
     starting_he = find_half_edge(g, f)
     hes = [starting_he]
     vs = [src(starting_he)]
@@ -112,14 +112,14 @@ function trace_face(g::PlanarGraph, f::Face)
 
     return hes, vs
 end
-trace_face(g::PlanarGraph, f::Integer) = trace_face(g, Face(f))
+trace_face(g::MedialGraph, f::Integer) = trace_face(g, Face(f))
 
 """
     trace_vertex(g, v)
 
 Returns a tuple containing all out half edges and all out neighbors from a vertex.
 """
-function trace_vertex(g::PlanarGraph, v::Vertex)
+function trace_vertex(g::MedialGraph, v::Vertex)
     starting_he = find_half_edge(g, v)
     hes = [starting_he]
     out_nbs = [dst(starting_he)]
@@ -133,30 +133,30 @@ function trace_vertex(g::PlanarGraph, v::Vertex)
 
     return hes, out_nbs
 end
-trace_vertex(g::PlanarGraph, v::Integer) = trace_vertex(g, Vertex(v))
+trace_vertex(g::MedialGraph, v::Integer) = trace_vertex(g, Vertex(v))
 
 """
     vertices(g)
 
 Returns all vertices in a planar graph.
 """
-vertices(g::PlanarGraph) = collect(keys(g.vertices))
+vertices(g::MedialGraph) = collect(keys(g.vertices))
 
-faces(g::PlanarGraph) = collect(keys(g.faces_half_edges))
+faces(g::MedialGraph) = collect(keys(g.faces_half_edges))
 
 """
     half_edges(g)
 
 Returns all half edges in a planar graph `g`.
 """
-half_edges(g::PlanarGraph) = collect(keys(g.half_edges_faces))
+half_edges(g::MedialGraph) = collect(keys(g.half_edges_faces))
 
 """
     edges(g)
 
 Return all whole edges in a planar graph `g`.
 """
-function edges(g::PlanarGraph)
+function edges(g::MedialGraph)
     es = Tuple{Vertex, Vertex}[]
     hes = half_edges(g)
     for he in hes
@@ -254,7 +254,7 @@ function planar_rz()
         HalfEdge(10, 1) => Face(6),
     )
 
-    return PlanarGraph(vertices, faces_half_edges, half_edges_faces)
+    return MedialGraph(vertices, faces_half_edges, half_edges_faces)
 end
 
 """
@@ -344,5 +344,5 @@ function planar_rx()
         HalfEdge(7, 6) => Face(6),
     )
 
-    return PlanarGraph(vertices, faces_half_edges, half_edges_faces)
+    return MedialGraph(vertices, faces_half_edges, half_edges_faces)
 end
