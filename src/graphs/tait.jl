@@ -16,6 +16,7 @@ mutable struct QuonTait{P <: Phase}
     inputs::Vector{Int}     # list of input vertices
     outputs::Vector{Int}    # list of output vertices
     genuses::Set{Int}   # set of vertices on genuses
+    locations::Dict{Int, Tuple{Float64, Float64}}   # v -> location
 end
 
 apis_1 = [:nv, :ne, :nf, :nhe, :vertices, :faces, :half_edges,
@@ -38,6 +39,7 @@ function rem_vertex!(q::QuonTait, v::Integer; update::Bool = true)
     deleteat!(q.inputs, findall(isequal(v), q.inputs))
     deleteat!(q.outputs, findall(isequal(v), q.outputs))
     delete!(q.genuses, v)
+    delete!(q.locations, v)
 
     return q
 end
@@ -56,6 +58,8 @@ function merge_graph!(A::QuonTait, B::QuonTait)
     he_max_A = A.g.he_max
     f_max_A = A.g.f_max
     merge_graph!(A.g, B.g)
+    ys_A = [p[2] for p in values(A.locations)]
+    y_max_A = maximum(ys_A)
     for (he_id, p) in B.phases
         A.phases[he_id + he_max_A] = p
     end
@@ -68,12 +72,16 @@ function merge_graph!(A::QuonTait, B::QuonTait)
     for v in B.genuses
         push!(A.genuses, v + v_max_A)
     end
+    for (v, p) in B.locations
+        A.locations[v + v_max_A] = (p[1], p[2] + y_max_A)
+    end
 
     return A
 end
 
 Base.copy(q::QuonTait) =
-    QuonTait(copy(q.g), copy(q.phases), copy(q.inputs), copy(q.outputs), copy(q.genuses))
+    QuonTait(copy(q.g), copy(q.phases), copy(q.inputs), copy(q.outputs),
+        copy(q.genuses), copy(g.locations))
 
 phase(q::QuonTait, he_id::Integer) = q.phases[he_id]
 change_direction!(g::QuonTait, e_id::Integer) = change_direction!(g.phases[e_id])
@@ -138,10 +146,3 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
     end
     return q
 end
-
-# function shift_adjlist!(adj, e_id)
-#     i_a = findfirst(isequal(e_id), adj)
-#     perm = [i_a+1:length(adj)..., 1:i_a...]
-#     permute!(adj, perm)
-#     return adj
-# end

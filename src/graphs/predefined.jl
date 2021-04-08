@@ -189,8 +189,16 @@ function tait_rx(θ::T) where T
     inputs = Int[1]
     outputs = Int[6]
     genuses = Set([2, 5])
+    locations = Dict(
+        1 => (1.0, 0.0),
+        2 => (0.0, 1.0),
+        3 => (1.0, 1.0),
+        4 => (1.0, 2.0),
+        5 => (2.0, 1.0),
+        6 => (1.0, 3.0),
+    )
 
-    return QuonTait{Phase{T}}(g, phases, inputs, outputs, genuses)
+    return QuonTait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
 end
 
 function tait_rz(θ::T) where T
@@ -200,6 +208,13 @@ function tait_rz(θ::T) where T
     inputs = Int[1]
     outputs = Int[5]
     genuses = Set([2, 4])
+    locations = Dict(
+        1 => (1.0, 0.0),
+        2 => (0.0, 1.0),
+        3 => (1.0, 1.0),
+        4 => (2.0, 1.0),
+        5 => (1.0, 2.0),
+    )
 
-    return QuonTait{Phase{T}}(g, phases, inputs, outputs, genuses)
+    return QuonTait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
 end

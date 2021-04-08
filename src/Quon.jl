@@ -20,4 +20,7 @@ export contract!, contract_boundary_vertices!
 include("graphs/predefined.jl")
 export planar_rx, planar_rz, tait_rx, tait_rz 
 
+include("plots.jl")
+export plot
+
 end
