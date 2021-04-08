@@ -87,7 +87,9 @@ phase(q::QuonTait, he_id::Integer) = q.phases[he_id]
 change_direction!(g::QuonTait, e_id::Integer) = change_direction!(g.phases[e_id])
 
 function contract!(A::QuonTait, B::QuonTait, va::Vector{Int}, vb::Vector{Int})
+    v_max_A = A.g.v_max
     merge_graph!(A, B)
+    vb = vb .+ v_max_A
     contract_boundary_vertices!(A, va, vb)
     return A
 end
