@@ -79,12 +79,17 @@ function merge_graph!(A::QuonTait, B::QuonTait)
     return A
 end
 
-Base.copy(q::QuonTait) =
-    QuonTait(copy(q.g), copy(q.phases), copy(q.inputs), copy(q.outputs),
-        copy(q.genuses), copy(g.locations))
+Base.copy(q::QuonTait) = QuonTait(
+        copy(q.g), copy(q.phases), copy(q.inputs), copy(q.outputs),
+        copy(q.genuses), copy(g.locations)
+    )
 
+phases(q::QuonTait) = q.phases
 phase(q::QuonTait, he_id::Integer) = q.phases[he_id]
+genuses(q::QuonTait) = sort!(collect(q.genuses))
+is_genus(q::QuonTait, v::Integer) = (v in q.genuses)
 change_direction!(g::QuonTait, e_id::Integer) = change_direction!(g.phases[e_id])
+is_open(q::QuonTait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
 function contract!(A::QuonTait, B::QuonTait, va::Vector{Int}, vb::Vector{Int})
     v_max_A = A.g.v_max

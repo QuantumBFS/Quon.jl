@@ -15,7 +15,8 @@ export PlanarMultigraph, QuonTait,
     check_faces, check_vertices, check_combinatorial_maps
 
 include("graphs/tait.jl")
-export contract!, contract_boundary_vertices!
+export contract!, contract_boundary_vertices!, 
+    phases, phases, genuses, is_genus, is_open
 
 include("graphs/predefined.jl")
 export planar_rx, planar_rz, tait_rx, tait_rz 
