@@ -19,7 +19,7 @@ export contract!, contract_boundary_vertices!,
     phases, phases, genuses, is_genus, is_open
 
 include("graphs/predefined.jl")
-export planar_rx, planar_rz, tait_rx, tait_rz 
+export planar_rx, planar_rz, planar_id, tait_rx, tait_rz, tait_id 
 
 include("plots.jl")
 export plot
