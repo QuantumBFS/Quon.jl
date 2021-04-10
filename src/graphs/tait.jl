@@ -53,13 +53,15 @@ function rem_edge!(q::QuonTait, he_id::Integer; update::Bool = true)
     return q
 end
 
-function merge_graph!(A::QuonTait, B::QuonTait)
+function merge_graph!(A::QuonTait, B::QuonTait; vertical::Bool = true, delta::Float64 = 0.0)
     v_max_A = A.g.v_max
     he_max_A = A.g.he_max
     f_max_A = A.g.f_max
     merge_graph!(A.g, B.g)
     ys_A = [p[2] for p in values(A.locations)]
     y_max_A = maximum(ys_A)
+    xs_A = [p[1] for p in values(A.locations)]
+    x_max_A = maximum(xs_A)
     for (he_id, p) in B.phases
         A.phases[he_id + he_max_A] = p
     end
@@ -72,8 +74,14 @@ function merge_graph!(A::QuonTait, B::QuonTait)
     for v in B.genuses
         push!(A.genuses, v + v_max_A)
     end
-    for (v, p) in B.locations
-        A.locations[v + v_max_A] = (p[1], p[2] + y_max_A)
+    if vertical
+        for (v, p) in B.locations
+            A.locations[v + v_max_A] = (p[1], p[2] + y_max_A + 1 - delta)
+        end
+    else
+        for (v, p) in B.locations
+            A.locations[v + v_max_A] = (p[1] + x_max_A + 1 - delta, p[2])
+        end
     end
 
     return A
@@ -93,7 +101,7 @@ is_open(q::QuonTait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
 function contract!(A::QuonTait, B::QuonTait, va::Vector{Int}, vb::Vector{Int})
     v_max_A = A.g.v_max
-    merge_graph!(A, B)
+    merge_graph!(A, B; delta = 3.0)
     vb = vb .+ v_max_A
     contract_boundary_vertices!(A, va, vb)
     return A
@@ -146,10 +154,66 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
             end
         end
         for f in fs_b
-            !(f in fs_a) && delete!(q.g.f2he, f)
+            f != 0 && delete!(q.g.f2he, f)
         end
         rem_vertex!(q, a; update = false)
         rem_vertex!(q, b; update = false)
     end
+    return q
+end
+
+function right_boundary(q::QuonTait)
+    v_in = q.inputs[end]
+    he_in = out_half_edge(q, v_in)
+    while !is_boundary(q, he_in)
+        he_in = σ_inv(q, he_in)
+    end
+    he_bd = he_in
+    right_bd = dst(q, he_bd)
+    is_genus(q, right_bd) && return right_bd
+end
+
+function left_boundary(q::QuonTait)
+    v_out = q.outputs[1]
+    he_out = out_half_edge(q, v_out)
+    while !is_boundary(q, he_out)
+        he_out = σ_inv(q, he_out)
+    end
+    he_bd = he_out
+    left_bd = dst(q, he_bd)
+    is_genus(q, left_bd) && return left_bd
+end
+
+function tensor_product!(A::QuonTait, B::QuonTait; 
+        right_bd_A::Integer = right_boundary(A), 
+        left_bd_B::Integer = left_boundary(B))
+    v_max_A = A.g.v_max
+    merge_graph!(A, B; vertical = false, delta = 1.0)
+    merge_boundary_vertices!(A, right_bd_A, left_bd_B + v_max_A)
+    return A
+end
+
+function merge_boundary_vertices!(q::QuonTait, v1::Integer, v2::Integer)
+    v1_out = out_half_edge(q, v1)
+    while !is_boundary(q, v1_out)
+        v1_out = σ_inv(q, v1_out)
+    end
+    v1_in = twin(q, σ(q, v1_out))
+    v2_out = out_half_edge(q, v2)
+    while !is_boundary(q, v2_out)
+        v2_out = σ_inv(q, v2_out)
+    end
+    v2_in = twin(q, σ(q, v2_out))
+    for he_id in trace_vertex(q, v2)
+        twin_id = twin(q, he_id)
+        he = half_edge(q, he_id)
+        q.g.half_edges[he_id] = HalfEdge(v1, he.dst)
+        q.g.half_edges[twin_id] = HalfEdge(he.dst, v1)
+    end
+    q.g.next[v1_in] = v2_out
+    q.g.next[v2_in] = v1_out
+    delete!(q.g.v2he, v2)
+    delete!(q.genuses, v2)
+    delete!(q.locations, v2)
     return q
 end

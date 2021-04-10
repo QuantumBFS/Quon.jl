@@ -16,6 +16,7 @@ export PlanarMultigraph, QuonTait,
 
 include("graphs/tait.jl")
 export contract!, contract_boundary_vertices!, 
+    tensor_product!, merge_boundary_vertices!,
     phases, phases, genuses, is_genus, is_open
 
 include("graphs/predefined.jl")
