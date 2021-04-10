@@ -50,6 +50,7 @@ function plot(q::QuonTait; show_half_edges = true, show_faces = true, face_color
     rot = Rotation.(hes_rot, hes_x, hes_y)
     ct_hes = (context(), 
         text(hes_x, hes_y, hes_label, [hcenter], [vbottom], rot), 
+        fill("gray"),
         fontsize(8pt)
     )
 
