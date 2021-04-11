@@ -148,6 +148,7 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
                 he_b = out_b[k + 1]
                 next_b = next(q, he_b)
                 if dst(q, next_b) == b # b has a multiedge loop
+                    delete!(q.g.f2he, face(q, next_a))
                     continue
                 else
                     update_face!(q, next_b)
