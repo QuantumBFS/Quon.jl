@@ -123,6 +123,9 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
         fs_a = [face(q, he) for he in out_a]
         fs_b = [face(q, he) for he in out_b]
 
+        # update half edges
+        # 1. look for half edge of b
+        # 2. replace half edge of b -> a
         for k in 1:length(out_a)
             he_a = out_a[k]
             he_b = out_b[k]
@@ -130,21 +133,27 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
                 q.g.half_edges[he_id] = HalfEdge(dst_a[k], dst(q, he_id))
                 q.g.half_edges[twin(q, he_id)] = HalfEdge(dst(q, he_id), dst_a[k])
             end
-            q.g.next[prev(q, twin(q, he_b))] = next(q, he_a)
-            q.g.next[prev(q, twin(q, he_a))] = next(q, he_b)
+            prev_twin_a = prev(q, twin(q, he_a))
+            prev_twin_b = prev(q, twin(q, he_b))
+            src(q, prev_twin_a) != a && (q.g.next[prev_twin_a] = next(q, he_b))
+            src(q, prev_twin_b) != b && (q.g.next[prev_twin_b] = next(q, he_a))
         end
+
+        # update faces
+        # 
         for k in 1:(length(out_a) - 1)
             he_a = out_a[k]
             next_a = next(q, he_a)
-            while src(q, next_a) == a || dst(q, next_a) == a
-                next_a = next_a(q, he_a)
-            end
-            f_a = face(q, next_a)
-            q.g.f2he[f_a] = next_a
-            curr_he = next(q, next_a)
-            while curr_he != next_a
-                q.g.he2f[curr_he] = f_a
-                curr_he = next(q, curr_he)
+            if dst(q, next_a) == a # a has a multiedge loop
+                he_b = out_b[k + 1]
+                next_b = next(q, he_b)
+                if dst(q, next_b) == b # b has a multiedge loop
+                    continue
+                else
+                    update_face!(q, next_b)
+                end
+            else
+                update_face!(q, next_a)
             end
         end
         for v in dst_b
@@ -161,6 +170,18 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
     end
     return q
 end
+
+function update_face!(q::QuonTait, he_id)
+    face_id = face(q, he_id)
+    q.g.f2he[face_id] = he_id
+    curr_he = next(q, he_id)
+    while curr_he != he_id
+        q.g.he2f[curr_he] = face_id
+        curr_he = next(q, curr_he)
+    end
+    return q
+end
+
 
 function right_boundary(q::QuonTait)
     v_in = q.inputs[end]
