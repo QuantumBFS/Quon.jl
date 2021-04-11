@@ -3,37 +3,26 @@ module Quon
 include("utils/yang_baxter.jl")
 export yang_baxter_param, yang_baxter_param_inv, change_direction!
 
-# export PlanarGraph, Vertex, Face, HalfEdge, 
-#     # interfaces
-#     half_edges, find_half_edge,
-#     twin, nv, src, dst, twin, next, prev, face, σ, σ_inv,
-#     has_vertex, has_half_edge, 
-#     is_boundary, trace_face, trace_vertex, 
-#     contract,
-#     half_edges, vertices,
-#     edges,
-
-#     # predefined
-#     planar_rx,
-#     planar_rz
-
-# export QuonGraph, quon_rx, quon_rz
+include("graphs/planar_multigraph.jl")
+export PlanarMultigraph, QuonTait,
+    vertices, faces, half_edges,
+    src, dst, half_edge, face,
+    next, prev, twin, α, ϕ, σ, σ_inv,
+    nv, ne, nf, nhe, is_boundary,
+    out_half_edge, surrounding_half_edge,
+    trace_face, trace_vertex, neighbors,
+    rem_vertex!, rem_edge!, rem_face!, merge_graph!,
+    check_faces, check_vertices, check_combinatorial_maps
 
 include("graphs/tait.jl")
-export TaitGraph, Edge,
-    # APIs
-    nv, ne, src, dst, edge, neighbors,
-    rem_edge!, rem_vertex!,
-    another_end, adjacent_edges, 
-    contract!, contract_boundary_vertices!,
-    
-    # predefined
-    tait_rx, tait_rz 
+export contract!, contract_boundary_vertices!, 
+    tensor_product!, merge_boundary_vertices!,
+    phases, phases, genuses, is_genus, is_open
 
-# include("graphs/types.jl")
-# include("graphs/planar.jl")
-# include("quon_graph.jl")
-# include("contract.jl")
-# include("plots.jl")
+include("graphs/predefined.jl")
+export planar_rx, planar_rz, planar_id, tait_rx, tait_rz, tait_id 
+
+include("plots.jl")
+export plot
 
 end
