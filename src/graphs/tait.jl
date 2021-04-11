@@ -19,19 +19,20 @@ mutable struct QuonTait{P <: Phase}
     locations::Dict{Int, Tuple{Float64, Float64}}   # v -> location
 end
 
-apis_1 = [:nv, :ne, :nf, :nhe, :vertices, :faces, :half_edges,
-    :check_faces, :check_vertices, :check_combinatorial_maps]
-apis_2 = [:src, :dst, :half_edge, :face,
-    :next, :prev, :twin, :α, :ϕ, :σ, :σ_inv, :is_boundary,
-    :out_half_edge, :surrounding_half_edge,
-    :trace_face, :trace_vertex, :neighbors, :rem_face!
-]
-
-for api in apis_1
-    @eval $api(q::QuonTait) = $api(q.g)
+for f in [
+        :nv, :ne, :nf, :nhe, :vertices, :faces, :half_edges,
+        :check_faces, :check_vertices, :check_combinatorial_maps
+    ]
+    @eval $f(q::QuonTait) = $f(q.g)
 end
-for api in apis_2
-    @eval $api(q::QuonTait, id) = $api(q.g, id)
+
+for f in [
+        :src, :dst, :half_edge, :face,
+        :next, :prev, :twin, :α, :ϕ, :σ, :σ_inv, :is_boundary,
+        :out_half_edge, :surrounding_half_edge,
+        :trace_face, :trace_vertex, :neighbors, :rem_face!, :update_face!
+    ]
+    @eval $f(q::QuonTait, id) = $f(q.g, id)
 end
 
 function rem_vertex!(q::QuonTait, v::Integer; update::Bool = true)
@@ -40,7 +41,6 @@ function rem_vertex!(q::QuonTait, v::Integer; update::Bool = true)
     deleteat!(q.outputs, findall(isequal(v), q.outputs))
     delete!(q.genuses, v)
     delete!(q.locations, v)
-
     return q
 end
 
@@ -171,18 +171,6 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
     end
     return q
 end
-
-function update_face!(q::QuonTait, he_id)
-    face_id = face(q, he_id)
-    q.g.f2he[face_id] = he_id
-    curr_he = next(q, he_id)
-    while curr_he != he_id
-        q.g.he2f[curr_he] = face_id
-        curr_he = next(q, curr_he)
-    end
-    return q
-end
-
 
 function right_boundary(q::QuonTait)
     v_in = q.inputs[end]

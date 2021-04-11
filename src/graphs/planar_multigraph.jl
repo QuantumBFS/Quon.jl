@@ -202,3 +202,14 @@ function check_combinatorial_maps(g::PlanarMultigraph)
     end
     return true
 end
+
+function update_face!(g::PlanarMultigraph, he_id)
+    face_id = face(g, he_id)
+    g.f2he[face_id] = he_id
+    curr_he = next(g, he_id)
+    while curr_he != he_id
+        g.he2f[curr_he] = face_id
+        curr_he = next(g, curr_he)
+    end
+    return g
+end
