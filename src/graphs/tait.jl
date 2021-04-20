@@ -122,6 +122,7 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
         dst_b = [dst(q, he) for he in out_b]
         fs_a = [face(q, he) for he in out_a]
         fs_b = [face(q, he) for he in out_b]
+        vs_rm = [out_b; [a, b]]
 
         # update half edges
         # 1. look for half edge of b
@@ -130,6 +131,9 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
             he_a = out_a[k]
             he_b = out_b[k]
             for he_id in trace_vertex(q, dst_b[k])
+                if !(dst(q, he_id) in vs_rm) 
+                    q.g.v2he[dst_a[k]] = he_id
+                end
                 q.g.half_edges[he_id] = HalfEdge(dst_a[k], dst(q, he_id))
                 q.g.half_edges[twin(q, he_id)] = HalfEdge(dst(q, he_id), dst_a[k])
             end
