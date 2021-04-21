@@ -106,7 +106,7 @@ function contract!(A::QuonTait, B::QuonTait, va::Vector{Int}, vb::Vector{Int})
     contract_boundary_vertices!(A, va, vb)
     return A
 end
-contract!(A::QuonTait, B::QuonTait) = contract!(A, B, A.outputs, B.inputs)
+contract!(A::QuonTait, B::QuonTait) = contract!(A, B, copy(A.outputs), copy(B.inputs))
 merge_graph(A::QuonTait, B::QuonTait) = merge_graph!(copy(A), B)
 
 function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{Int})
@@ -122,7 +122,13 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
         dst_b = [dst(q, he) for he in out_b]
         fs_a = [face(q, he) for he in out_a]
         fs_b = [face(q, he) for he in out_b]
-        vs_rm = [out_b; [a, b]]
+        vs_rm = [a, b]
+        for v in dst_b
+            if !(v in dst_a)
+                push!(vs_rm, v)
+            end
+        end
+        new_next = Tuple{Int, Int}[]
 
         # update half edges
         # 1. look for half edge of b
@@ -139,10 +145,12 @@ function contract_boundary_vertices!(q::QuonTait, va::Vector{Int}, vb::Vector{In
             end
             prev_twin_a = prev(q, twin(q, he_a))
             prev_twin_b = prev(q, twin(q, he_b))
-            src(q, prev_twin_a) != a && (q.g.next[prev_twin_a] = next(q, he_b))
-            src(q, prev_twin_b) != b && (q.g.next[prev_twin_b] = next(q, he_a))
+            src(q, prev_twin_a) != a && push!(new_next, (prev_twin_a, next(q, he_b)))
+            src(q, prev_twin_b) != b && push!(new_next, (prev_twin_b, next(q, he_a)))
         end
-
+        for (he_c, he_n) in new_next
+            q.g.next[he_c] = he_n
+        end
         # update faces
         # 
         for k in 1:(length(out_a) - 1)
