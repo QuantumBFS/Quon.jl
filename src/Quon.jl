@@ -14,7 +14,8 @@ export contract!, contract_boundary_vertices!,
     tensor_product!, merge_boundary_vertices!,
     phases, phases, genuses, is_genus, is_open
 export plot
-export planar_rx, planar_rz, planar_id, tait_rx, tait_rz, tait_id 
+export planar_rx, planar_rz, planar_id, planar_copy, tait_rx, tait_rz, tait_id,
+    tait_hadamard, tait_copy
 
 include("utils/yang_baxter.jl")
 include("graphs/planar_multigraph.jl")

@@ -14,6 +14,8 @@ contract!(rz2, rx2)
 @test ne(rz) == 8 == ne(rz2)
 @test nf(rz) == 4 == nf(rz2)
 @test check_combinatorial_maps(rz) && check_combinatorial_maps(rz2)
+@test check_vertices(rz) && check_faces(rz)
+@test check_vertices(rz2) && check_faces(rz2)
 
-id2 = tensor_product!(tait_id(), tait_id())
-@test length(trace_vertex(id2, 4)) == 4
+idr = tensor_product!(tait_id(), rz2)
+@test length(trace_vertex(idr, 4)) == 5
