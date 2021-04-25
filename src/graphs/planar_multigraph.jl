@@ -5,6 +5,10 @@ end
 src(he::HalfEdge) = he.src
 dst(he::HalfEdge) = he.dst
 
+
+# NOTE: 
+# isolated vertices can only appear without any other connection.
+# thus we can just use a vertice -> face map for isolated vertices.
 mutable struct PlanarMultigraph
     v2he::Dict{Int, Int}    # v_id -> he_id
     half_edges::Dict{Int, HalfEdge} # he_id -> he

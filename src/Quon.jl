@@ -1,7 +1,7 @@
 module Quon
 
 export yang_baxter_param, yang_baxter_param_inv, change_direction!
-export PlanarMultigraph, QuonTait,
+export PlanarMultigraph, Tait,
     vertices, faces, half_edges,
     src, dst, half_edge, face,
     next, prev, twin, α, ϕ, σ, σ_inv,
@@ -21,6 +21,7 @@ include("utils/yang_baxter.jl")
 include("graphs/planar_multigraph.jl")
 include("graphs/tait.jl")
 include("graphs/predefined.jl")
+include("match.jl")
 include("plots.jl")
 
 end

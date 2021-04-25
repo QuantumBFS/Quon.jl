@@ -17,3 +17,11 @@ c = tait_copy()
 tensor_product!(id, h)
 contract!(c, id)
 plot(c)
+tait_copy().outputs
+
+c = contract!(tait_copy(), tait_copy(), [2, ], [1, ])
+
+plot(c)
+plot(tait_copy())
+
+tait_copy().genuses

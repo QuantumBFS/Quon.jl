@@ -198,7 +198,7 @@ function tait_rx(θ::T) where T
         6 => (1.0, 3.0),
     )
 
-    return QuonTait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
 end
 
 function tait_rz(θ::T) where T
@@ -216,7 +216,7 @@ function tait_rz(θ::T) where T
         5 => (1.0, 2.0),
     )
 
-    return QuonTait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
 end
 
 function planar_id()
@@ -315,7 +315,7 @@ function tait_id()
         5 => (1.0, 2.0),
     )
 
-    return QuonTait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
 end
 
 function tait_hadamard()
@@ -454,5 +454,5 @@ function tait_copy()
         7 => (1.0, 1.0),
     )
 
-    return QuonTait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
 end

@@ -1,6 +1,6 @@
 using Compose
 
-function plot(q::QuonTait; show_half_edges = true, show_faces = true, face_color = "salmon", background = "white")
+function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "salmon", background = "white")
     x_min, x_max = (0.0, 1.0)
     y_min, y_max = (0.0, 1.0)
     for v in values(q.locations)
