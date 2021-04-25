@@ -2,7 +2,6 @@ mutable struct Phase{T <: Number}
     param::T
     isparallel::Bool
 end
-Phase(p::T, isparallel::Bool) where {T <: Number} = Phase{T}(p, isparallel)
 
 function change_direction!(p::Phase)
     p.param = change_direction(p.param)
