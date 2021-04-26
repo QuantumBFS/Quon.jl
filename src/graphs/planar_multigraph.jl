@@ -18,13 +18,18 @@ mutable struct PlanarMultigraph
     
     next::Dict{Int, Int}    # he_id -> he_id
     twin::Dict{Int, Int}    # he_id -> he_id
+
+    vs_isolated::Dict{Int, Int} # v_id -> f_id
     
     v_max::Int
     he_max::Int
     f_max::Int
 end
 
-vertices(g::PlanarMultigraph) = sort!(collect(keys(g.v2he)))
+vertices(g::PlanarMultigraph) = vcat(collect(keys(g.v2he)), collect(keys(g.vs_isolated)))
+isolated_vertices(g::PlanarMultigraph) = collect(keys(g.vs_isolated))
+is_isolated(g::PlanarMultigraph, v::Integer) = haskey(g.vs_isolated, v)
+
 faces(g::PlanarMultigraph) = sort!(collect(keys(g.f2he)))
 half_edges(g::PlanarMultigraph) = sort!(collect(keys(g.half_edges)))
 
@@ -56,7 +61,10 @@ nf(g::PlanarMultigraph) = length(g.f2he)
 nhe(g::PlanarMultigraph) = length(g.half_edges)
 ne(g::PlanarMultigraph) = nhe(g) ÷ 2
 
-out_half_edge(g::PlanarMultigraph, v::Integer) = g.v2he[v]
+function out_half_edge(g::PlanarMultigraph, v::Integer)
+    is_isolated(g, v) && return 0
+    return g.v2he[v]
+end
 surrounding_half_edge(g::PlanarMultigraph, f::Integer) = g.f2he[f]
 
 function trace_orbit(f::Function, a::T; rev::Bool = false) where T
@@ -73,7 +81,10 @@ function trace_orbit(f::Function, a::T; rev::Bool = false) where T
     return perm
 end
 trace_face(g::PlanarMultigraph, f::Integer) = trace_orbit(h -> g.next[h], surrounding_half_edge(g, f))
-trace_vertex(g::PlanarMultigraph, v::Integer) = trace_orbit(h -> σ_inv(g, h), out_half_edge(g, v); rev = true)
+function trace_vertex(g::PlanarMultigraph, v::Integer)
+    is_isolated(g, v) && return Int[]
+    return trace_orbit(h -> σ_inv(g, h), out_half_edge(g, v); rev = true)
+end
 neighbors(g::PlanarMultigraph, v::Integer) = [dst(g, he) for he in trace_vertex(g, v)]
 
 is_boundary(g::PlanarMultigraph, he_id::Integer) = (face(g, he_id) == 0)
@@ -83,6 +94,7 @@ function rem_vertex!(g::PlanarMultigraph, v::Integer; update::Bool = true)
         rem_edge!(g, he; update = update)
     end
     delete!(g.v2he, v)
+    delete!(g.vs_isolated, v)
     return g
 end
 
@@ -174,6 +186,9 @@ function merge_graph!(A::PlanarMultigraph, B::PlanarMultigraph)
     for (curr, twin) in B.twin
         A.twin[curr + A.he_max] = twin + A.he_max
     end
+    for (v, f) in B.vs_isolated
+        A.vs_isolated[v + A.v_max] = (f == 0) ? 0 : (f + A.f_max)
+    end
 
     A.v_max += B.v_max
     A.he_max += B.he_max
@@ -209,11 +224,18 @@ end
 
 function update_face!(g::PlanarMultigraph, he_id)
     face_id = face(g, he_id)
+    fs_rm = Int[]
     g.f2he[face_id] = he_id
     curr_he = next(g, he_id)
     while curr_he != he_id
-        g.he2f[curr_he] = face_id
+        if g.he2f[curr_he] != face_id
+            push!(fs_rm, g.he2f[curr_he])
+            g.he2f[curr_he] = face_id
+        end
         curr_he = next(g, curr_he)
+    end
+    for (v, f) in g.vs_isolated
+        (f in fs_rm) && (g.vs_isolated[v] = face_id)
     end
     return g
 end
