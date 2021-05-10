@@ -20,7 +20,8 @@ end
 
 for f in [
         :nv, :ne, :nf, :nhe, :vertices, :faces, :half_edges,
-        :check_faces, :check_vertices, :check_combinatorial_maps
+        :check_faces, :check_vertices, :check_combinatorial_maps,
+        :isolated_vertices, 
     ]
     @eval $f(q::Tait) = $f(q.g)
 end
@@ -29,7 +30,8 @@ for f in [
         :src, :dst, :half_edge, :face,
         :next, :prev, :twin, :α, :ϕ, :σ, :σ_inv, :is_boundary,
         :out_half_edge, :surrounding_half_edge,
-        :trace_face, :trace_vertex, :neighbors, :rem_face!, :update_face!
+        :trace_face, :trace_vertex, :neighbors, :rem_face!, :update_face!,
+        :is_isolated, 
     ]
     @eval $f(q::Tait, id) = $f(q.g, id)
 end
@@ -128,6 +130,7 @@ function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
             end
         end
         new_next = Tuple{Int, Int}[]
+        new_vs_isolated = Int[]
 
         # update half edges
         # 1. look for half edge of b
@@ -135,6 +138,10 @@ function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
         for k in 1:length(out_a)
             he_a = out_a[k]
             he_b = out_b[k]
+            if dst_a[k] == dst_b[k] && length(trace_vertex(q, dst_a[k])) == 2
+                push!(new_vs_isolated, dst_a[k])
+                q.g.vs_isolated[dst_a[k]] = fs_a[k]
+            end
             for he_id in trace_vertex(q, dst_b[k])
                 if !(dst(q, he_id) in vs_rm) 
                     q.g.v2he[dst_a[k]] = he_id
@@ -177,6 +184,9 @@ function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
         for f in fs_b
             f != 0 && delete!(q.g.f2he, f)
         end
+        for v in new_vs_isolated
+            delete!(q.g.v2he, v)
+        end
         rem_vertex!(q, a; update = false)
         rem_vertex!(q, b; update = false)
     end
@@ -186,6 +196,7 @@ end
 function right_boundary(q::Tait)
     v_in = q.inputs[end]
     he_in = out_half_edge(q, v_in)
+    @assert he_in != 0
     while !is_boundary(q, he_in)
         he_in = σ_inv(q, he_in)
     end
@@ -197,6 +208,7 @@ end
 function left_boundary(q::Tait)
     v_out = q.outputs[1]
     he_out = out_half_edge(q, v_out)
+    @assert he_out != 0
     while !is_boundary(q, he_out)
         he_out = σ_inv(q, he_out)
     end
@@ -216,11 +228,13 @@ end
 
 function merge_boundary_vertices!(q::Tait, v1::Integer, v2::Integer)
     v1_out = out_half_edge(q, v1)
+    @assert v1_out != 0
     while !is_boundary(q, v1_out)
         v1_out = σ_inv(q, v1_out)
     end
     v1_in = twin(q, σ(q, v1_out))
     v2_out = out_half_edge(q, v2)
+    @assert v2_out != 0
     while !is_boundary(q, v2_out)
         v2_out = σ_inv(q, v2_out)
     end

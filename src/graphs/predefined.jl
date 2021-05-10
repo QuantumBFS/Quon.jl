@@ -81,9 +81,10 @@ function planar_rx()
         13 => 14,
         14 => 13,
     )
+    vs_isolated = Dict{Int, Int}()
     rx = PlanarMultigraph(v2he, half_edges,
         f2he, he2f,
-        next, twin,
+        next, twin, vs_isolated,
         6, 14, 2
     )
     return rx
@@ -174,9 +175,10 @@ function planar_rz()
         13 => 14,
         14 => 13,
     )
+    vs_isolated = Dict{Int, Int}()
     rz = PlanarMultigraph(v2he, half_edges,
         f2he, he2f,
-        next, twin,
+        next, twin, vs_isolated,
         5, 14, 3
     )
     return rz
@@ -293,9 +295,10 @@ function planar_id()
         11 => 12,
         12 => 11,
     )
+    vs_isolated = Dict{Int, Int}()
     id = PlanarMultigraph(v2he, half_edges,
         f2he, he2f,
-        next, twin,
+        next, twin, vs_isolated, 
         5, 12, 2
     )
     return id
@@ -430,9 +433,10 @@ function planar_copy()
         17 => 18,
         18 => 17,
     )
+    vs_isolated = Dict{Int, Int}()
     copy_tensor = PlanarMultigraph(v2he, half_edges,
         f2he, he2f,
-        next, twin,
+        next, twin, vs_isolated,
         7, 18, 3
     )
     return copy_tensor
