@@ -22,6 +22,7 @@ include("graphs/planar_multigraph.jl")
 include("graphs/tait.jl")
 include("graphs/predefined.jl")
 include("match.jl")
+include("rewrite.jl")
 include("plots.jl")
 
 end

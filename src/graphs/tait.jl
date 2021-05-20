@@ -18,23 +18,38 @@ mutable struct Tait{P <: Phase}
     locations::Dict{Int, Tuple{Float64, Float64}}   # v -> location
 end
 
-for f in [
-        :nv, :ne, :nf, :nhe, :vertices, :faces, :half_edges,
-        :check_faces, :check_vertices, :check_combinatorial_maps,
-        :isolated_vertices, 
-    ]
-    @eval $f(q::Tait) = $f(q.g)
-end
+nv(q::Tait) = nv(q.g)
+ne(q::Tait) = ne(q.g)
+nf(q::Tait) = nf(q.g)
+nhe(q::Tait) = nhe(q.g)
+vertices(q::Tait) = vertices(q.g)
+faces(q::Tait) = faces(q.g)
+half_edges(q::Tait) = half_edges(q.g)
+check_faces(q::Tait) = check_faces(q.g)
+check_vertices(q::Tait) = check_vertices(q.g)
+check_combinatorial_maps(q::Tait) = check_combinatorial_maps(q.g)
+isolated_vertices(q::Tait) = isolated_vertices(q.g)
 
-for f in [
-        :src, :dst, :half_edge, :face,
-        :next, :prev, :twin, :α, :ϕ, :σ, :σ_inv, :is_boundary,
-        :out_half_edge, :surrounding_half_edge,
-        :trace_face, :trace_vertex, :neighbors, :rem_face!, :update_face!,
-        :is_isolated, 
-    ]
-    @eval $f(q::Tait, id) = $f(q.g, id)
-end
+src(q::Tait, id) = src(q.g, id)
+dst(q::Tait, id) = dst(q.g, id)
+half_edge(q::Tait, id) = half_edge(q.g, id)
+face(q::Tait, id) = face(q.g, id)
+next(q::Tait, id) = next(q.g, id)
+prev(q::Tait, id) = prev(q.g, id)
+twin(q::Tait, id) = twin(q.g, id)
+α(q::Tait, id) = α(q.g, id)
+ϕ(q::Tait, id) = ϕ(q.g, id)
+σ(q::Tait, id) = σ(q.g, id)
+σ_inv(q::Tait, id) = σ_inv(q.g, id)
+is_boundary(q::Tait, id) = is_boundary(q.g, id)
+out_half_edge(q::Tait, id) = out_half_edge(q.g, id)
+surrounding_half_edge(q::Tait, id) = surrounding_half_edge(q.g, id)
+trace_face(q::Tait, id) = trace_face(q.g, id)
+trace_vertex(q::Tait, id) = trace_vertex(q.g, id)
+neighbors(q::Tait, id) = neighbors(q.g, id)
+rem_face!(q::Tait, id) = rem_face!(q.g, id)
+update_face!(q::Tait, id) = update_face!(q.g, id)
+is_isolated(q::Tait, id) = is_isolated(q.g, id)
 
 function rem_vertex!(q::Tait, v::Integer; update::Bool = true)
     rem_vertex!(q.g, v; update = update)

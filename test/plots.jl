@@ -19,9 +19,11 @@ contract!(c, id)
 plot(c)
 tait_copy().outputs
 
-c = contract!(tait_copy(), tait_copy(), [2, ], [1, ])
+c = contract!(tait_copy(), tait_copy(), [2, 3], [1, 3])
 
 plot(c)
+
 plot(tait_copy())
 
 tait_copy().genuses
+
