@@ -239,3 +239,31 @@ function update_face!(g::PlanarMultigraph, he_id)
     end
     return g
 end
+
+function add_edge!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
+    hes_f = trace_face(g, f)
+    he1_in, he1_out, he2_in, he2_out = (0,0,0,0)
+    for he in hes_f
+        dst(g, he) == v1 && (he1_in = he)
+        src(g, he) == v1 && (he1_out = he)
+        dst(g, he) == v2 && (he2_in = he)
+        src(g, he) == v2 && (he2_out = he)
+    end
+    he1_in * he1_out * he2_in * he2_out != 0 || return g
+    new_he1 = g.he_max + 1
+    new_he2 = g.he_max + 2
+    g.he_max += 2
+    g.twin[new_he1] = new_he2
+    g.twin[new_he2] = new_he1
+    g.half_edges[new_he1] = HalfEdge(v1, v2)
+    g.half_edges[new_he2] = HalfEdge(v2, v1)
+    g.next[he1_in] = new_he1
+    g.next[new_he1] = he2_out
+    g.next[he2_in] = new_he2
+    g.next[new_he2] = he1_out
+    g.he2f[new_he1] = f
+    g.f_max += 1
+    g.he2f[new_he2] = g.f_max
+    update_face!(g, new_he2)
+    return g
+end

@@ -51,6 +51,15 @@ rem_face!(q::Tait, id) = rem_face!(q.g, id)
 update_face!(q::Tait, id) = update_face!(q.g, id)
 is_isolated(q::Tait, id) = is_isolated(q.g, id)
 
+function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where P
+    add_edge!(q.g, v1, v2, f)
+    new_he1 = q.g.he_max - 1
+    new_he2 = new_he1 + 1
+    q.phases[new_he1] = p
+    q.phases[new_he2] = p
+    return q
+end
+
 function rem_vertex!(q::Tait, v::Integer; update::Bool = true)
     rem_vertex!(q.g, v; update = update)
     deleteat!(q.inputs, findall(isequal(v), q.inputs))
@@ -62,7 +71,7 @@ end
 
 function rem_edge!(q::Tait, he_id::Integer; update::Bool = true)
     twin_id = twin(q, he_id)
-    rem_edge!(q, he_id; update = update)
+    rem_edge!(q.g, he_id; update = update)
     delete!(q.phases, he_id)
     delete!(q.phases, twin_id)
 
