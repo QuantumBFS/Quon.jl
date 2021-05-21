@@ -274,11 +274,15 @@ function add_edge_isolated_1!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::
     new_he1 = g.he_max - 1
     new_he2 = g.he_max
     g.v2he[v1] = new_he2
+    g.twin[new_he1] = new_he2
+    g.twin[new_he2] = new_he1
     g.next[he2_in] = new_he1
     g.next[new_he1] = new_he2
     g.next[new_he2] = he2_out
-    g.half_edges[he1] = HalfEdge(v2, v1)
-    g.half_edges[he2] = HalfEdge(v1, v2)
+    g.he2f[new_he1] = f
+    g.he2f[new_he2] = f
+    g.half_edges[new_he1] = HalfEdge(v2, v1)
+    g.half_edges[new_he2] = HalfEdge(v1, v2)
     delete!(g.vs_isolated, v1)
 
     return (new_he1, new_he2)
@@ -288,10 +292,14 @@ function add_edge_isolated_2!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::
     g.he_max += 2
     new_he1 = g.he_max - 1
     new_he2 = g.he_max
+    g.twin[new_he1] = new_he2
+    g.twin[new_he2] = new_he1
     g.next[new_he1] = new_he2
     g.next[new_he2] = new_he1
     g.v2he[v1] = new_he1
     g.v2he[v2] = new_he2
+    g.he2f[new_he1] = f
+    g.he2f[new_he2] = f
     g.half_edges[new_he1] = HalfEdge(v1, v2)
     g.half_edges[new_he2] = HalfEdge(v2, v1)
     delete!(g.vs_isolated, v1)
@@ -305,10 +313,10 @@ function add_edge!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
         if is_isolated(g, v2)
             return add_edge_isolated_2!(g, v1, v2, f)
         else
-            return add_edge_isolated_1(g, v1, v2, f)
+            return add_edge_isolated_1!(g, v1, v2, f)
         end
     elseif is_isolated(g, v2)
-        return add_edge_isolated_1(g, v2, v1, f)
+        return add_edge_isolated_1!(g, v2, v1, f)
     end
     hes_f = trace_face(g, f)
     he1_in, he1_out, he2_in, he2_out = (0,0,0,0)
