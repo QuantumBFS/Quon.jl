@@ -3,10 +3,32 @@ mutable struct Phase{T <: Number}
     isparallel::Bool
 end
 
+Base.copy(p::Phase{T}) where T = Phase{T}(p.param, p.isparallel)
+
 function change_direction!(p::Phase)
     p.param = change_direction(p.param)
     p.isparallel = !p.isparallel
     return p
+end
+change_direction(p::Phase) = change_direction!(copy(p))
+
+function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
+    # triangle => star
+    p1.isparallel && (p1 = change_direction(p1))
+    !p2.isparallel && (p2 = change_direction(p2))
+    p3.isparallel && (p3 = change_direction(p3))
+    
+    q1_param, q2_param, q3_param = yang_baxter_param(p1.param, p2.param, p3.param)
+    return Phase(q1_param, true), Phase(q2_param, false), Phase(q3_param, true)
+end
+function yang_baxter_param_inv(p1::Phase, p2::Phase, p3::Phase)
+    # star => triangle
+    !p1.isparallel && (p1 = change_direction(p1))
+    p2.isparallel && (p2 = change_direction(p2))
+    !p3.isparallel && (p3 = change_direction(p3))
+    
+    q1_param, q2_param, q3_param = yang_baxter_param_inv(p1.param, p2.param, p3.param)
+    return Phase(q1_param, false), Phase(q2_param, true), Phase(q3_param, false)
 end
 
 mutable struct Tait{P <: Phase}
@@ -50,14 +72,15 @@ neighbors(q::Tait, id) = neighbors(q.g, id)
 rem_face!(q::Tait, id) = rem_face!(q.g, id)
 update_face!(q::Tait, id) = update_face!(q.g, id)
 is_isolated(q::Tait, id) = is_isolated(q.g, id)
+add_vertex!(q::Tait, id) = add_vertex!(q.g, id)
 
 function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where P
-    add_edge!(q.g, v1, v2, f)
-    new_he1 = q.g.he_max - 1
-    new_he2 = new_he1 + 1
-    q.phases[new_he1] = p
-    q.phases[new_he2] = p
-    return q
+    (new_he1, new_he2) = add_edge!(q.g, v1, v2, f)
+    if !(0 in (new_he1, new_he2))
+        q.phases[new_he1] = p
+        q.phases[new_he2] = p
+    end
+    return (new_he1, new_he2)
 end
 
 function rem_vertex!(q::Tait, v::Integer; update::Bool = true)
