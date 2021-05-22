@@ -85,11 +85,16 @@ function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where
 end
 
 function rem_vertex!(q::Tait, v::Integer; update::Bool = true)
+    for he in trace_vertex(q, v)
+        delete!(q.phases, twin(q, he))
+        delete!(q.phases, he)
+    end
     rem_vertex!(q.g, v; update = update)
     deleteat!(q.inputs, findall(isequal(v), q.inputs))
     deleteat!(q.outputs, findall(isequal(v), q.outputs))
     delete!(q.genuses, v)
     delete!(q.locations, v)
+    
     return q
 end
 
