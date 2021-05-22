@@ -346,3 +346,42 @@ function add_edge!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
     update_face!(g, new_he2)
     return (new_he1, new_he2)
 end
+
+function contract_edge!(g::PlanarMultigraph, he_id::Integer)
+    twin_id = twin(g, he_id)
+    he_prev = prev(g, he_id)
+    he_next = next(g, he_id)
+    twin_prev = prev(g, twin_id)
+    twin_next = next(g, twin_id)
+    
+    v1 = src(g, he_id)
+    v2 = dst(g, he_id)
+    for he in trace_vertex(g, v2)
+        v0 = dst(g, he)
+        g.half_edges[he] = HalfEdge(v1, v0)
+        g.half_edges[twin(g, he)] = HalfEdge(v0, v1)
+    end
+
+    if he_next == twin_id
+        g.next[he_prev] = twin_next
+        g.f2he[face(g, he_id)] = he_prev
+    elseif he_id == twin_next
+        g.next[twin_prev] = he_next
+        g.f2he[face(g, twin_id)] = twin_prev
+    else
+        g.next[he_prev] = he_next
+        g.next[twin_prev] = twin_next
+        g.f2he[face(g, he_id)] = he_prev
+        g.f2he[face(g, twin_id)] = twin_prev
+    end
+    delete!(g.next, he_id)
+    delete!(g.next, twin_id)
+    delete!(g.half_edges, he_id)
+    delete!(g.half_edges, twin_id)
+    delete!(g.twin, he_id)
+    delete!(g.twin, twin_id)
+    delete!(g.he2f, he_id)
+    delete!(g.he2f, twin_id)
+    delete!(g.v2he, v2)
+    return (v1, v2)
+end

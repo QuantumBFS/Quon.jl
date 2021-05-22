@@ -128,5 +128,6 @@ function has_open_half_edge(tait::Tait, hes)
 end
 
 function is_phase_zero(theta::Phase)
-    (theta.isparallel && iszero(theta.param)) || (theta.param < 0 && isinf(theta.param))
+    # TODO: it should be approx to 0
+    iszero(theta.param) || iszero(change_direction(theta.param))
 end

@@ -4,13 +4,27 @@ mutable struct Phase{T <: Number}
 end
 
 Base.copy(p::Phase{T}) where T = Phase{T}(p.param, p.isparallel)
-
-function change_direction!(p::Phase)
-    p.param = change_direction(p.param)
-    p.isparallel = !p.isparallel
-    return p
+function Base.:(+)(p1::Phase, p2::Phase)
+    if p1.isparallel == p2.isparallel
+        new_param = p1.param + p2.param
+        new_ispara = p1.isparallel
+    elseif !isinf(change_direction(p1.param))
+        new_param = change_direction(p1.param) + p2.param
+        new_ispara = p2.isparallel
+    elseif !isinf(change_direction(p2.param))
+        new_param = p1.param + change_direction(p2.param)
+        new_ispara = p1.isparallel
+    else
+        return !p1.isparallel ? p1 : p2
+    end
+    return Phase{typeof(new_param)}(new_param, new_ispara)
 end
-change_direction(p::Phase) = change_direction!(copy(p))
+
+function change_direction(p::Phase)
+    new_param = change_direction(p.param)
+    new_isparallel = !p.isparallel
+    return Phase{typeof(new_param)}(new_param, new_isparallel)
+end
 
 function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
     # triangle => star
@@ -107,6 +121,16 @@ function rem_edge!(q::Tait, he_id::Integer; update::Bool = true)
     return q
 end
 
+function contract_edge!(q::Tait, he_id::Integer)
+    twin_id = twin(q, he_id)
+    (v1, v2) = contract_edge!(q.g, he_id)
+    v2 in q.genuses && push!(q.genuses, v1)
+    delete!(q.phases, he_id)
+    delete!(q.phases, twin_id)
+    delete!(q.locations, v2)
+    return q
+end
+
 function merge_graph!(A::Tait, B::Tait; vertical::Bool = true, delta::Float64 = 0.0)
     v_max_A = A.g.v_max
     he_max_A = A.g.he_max
@@ -150,9 +174,11 @@ phases(q::Tait) = q.phases
 phase(q::Tait, he_id::Integer) = q.phases[he_id]
 genuses(q::Tait) = sort!(collect(q.genuses))
 is_genus(q::Tait, v::Integer) = (v in q.genuses)
-function change_direction!(g::Tait, e_id::Integer) 
-    change_direction!(g.phases[e_id])
-    change_direction!(g.phases[twin(g, e_id)])
+function change_direction!(q::Tait, e_id::Integer) 
+    p = change_direction(q.phases[e_id])
+    q.phases[e_id] = p
+    q.phases[twin(q, e_id)] = p
+    return q
 end
 is_open(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
