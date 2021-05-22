@@ -339,8 +339,10 @@ function add_edge!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
     g.next[he2_in] = new_he2
     g.next[new_he2] = he1_out
     g.he2f[new_he1] = f
+    g.f2he[f] = new_he1
     g.f_max += 1
     g.he2f[new_he2] = g.f_max
+    g.f2he[g.f_max] = new_he2
     update_face!(g, new_he2)
     return (new_he1, new_he2)
 end
