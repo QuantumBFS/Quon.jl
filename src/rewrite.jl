@@ -9,7 +9,7 @@ function rewrite!(tait::Tait, match::Match{:yang_baxter_triangle})
     vs = [src(tait, he) for he in hes]
     f = face(tait, hes[1])
     new_v = add_vertex!(tait, f)
-    p1, p2, p3 = [phase(tait, he) for he in reverse(hes)]
+    p1, p2, p3 = (phase(tait, hes[1]), phase(tait, hes[3]), phase(tait, hes[2]))
     q1, q2, q3 = yang_baxter_param(p1, p2, p3)
     add_edge!(tait, vs[1], new_v, face(tait, hes[1]), q1)
     add_edge!(tait, vs[2], new_v, face(tait, hes[2]), q2)

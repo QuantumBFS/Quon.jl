@@ -19,7 +19,8 @@ function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
     p3.isparallel && (p3 = change_direction(p3))
     
     q1_param, q2_param, q3_param = yang_baxter_param(p1.param, p2.param, p3.param)
-    return Phase(q1_param, true), Phase(q2_param, false), Phase(q3_param, true)
+    q1, q2, q3 = Phase(q1_param, true), Phase(q2_param, false), Phase(q3_param, true)
+    return q1, q2, q3
 end
 function yang_baxter_param_inv(p1::Phase, p2::Phase, p3::Phase)
     # star => triangle
@@ -144,7 +145,10 @@ phases(q::Tait) = q.phases
 phase(q::Tait, he_id::Integer) = q.phases[he_id]
 genuses(q::Tait) = sort!(collect(q.genuses))
 is_genus(q::Tait, v::Integer) = (v in q.genuses)
-change_direction!(g::Tait, e_id::Integer) = change_direction!(g.phases[e_id])
+function change_direction!(g::Tait, e_id::Integer) 
+    change_direction!(g.phases[e_id])
+    change_direction!(g.phases[twin(g, e_id)])
+end
 is_open(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
