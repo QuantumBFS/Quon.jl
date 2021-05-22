@@ -28,6 +28,6 @@ contract_boundary_vertices!(c, [3], [8])
 rx = tait_rx(im)
 plot(rx)
 rx.g.next[8]
-rem_edge!(rx, 3; update = true)
+rem_edge!(rx, 8; update = true)
 rem_edge!(rx, 11; update = true)
 @test length(rx.g.vs_isolated) == 1
