@@ -24,7 +24,7 @@ end
 
 struct Rule{T} end
 
-match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R, P}[], r, tait)
+Base.match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R, P}[], r, tait)
 
 function match!(matches, ::Rule{:string_genus}, tait::Tait)
     for (v, _) in tait.g.vs_isolated
