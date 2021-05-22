@@ -18,3 +18,16 @@ end
     Quon.rewrite!(rz, m[1])
     @test rz.g.f_max == 4
 end
+
+@testset "Yang-Baxter Rule" begin 
+    ry = contract!(contract!(tait_rz(0.0*im), tait_rx(-π/2*im)), tait_rz(π/2*im))
+    m1 = match(Rule{:yang_baxter_triangle}(), ry)
+    @test length(m1) == 1
+    rewrite!(ry, m1[1])
+
+    m2 = match(Rule{:yang_baxter_star}(), ry)
+    @test length(m2) == 1
+    Quon.rewrite!(ry, m2[1])
+    m3 = match(Rule{:yang_baxter_triangle}(), ry)
+    @test length(m3) == 1
+end
