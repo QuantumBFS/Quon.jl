@@ -12,3 +12,7 @@ end
 @testset "plots.jl" begin
     include("plots.jl")
 end
+
+@testset "rules.jl" begin
+    include("rules.jl")
+end
