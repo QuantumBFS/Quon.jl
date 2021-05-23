@@ -24,7 +24,7 @@ end
 
 struct Rule{T} end
 
-match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R, P}[], r, tait)
+Base.match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R, P}[], r, tait)
 
 function match!(matches, ::Rule{:string_genus}, tait::Tait)
     for (v, _) in tait.g.vs_isolated
@@ -79,24 +79,35 @@ end
 # TODO: can we just match 3 genuses?
 function match!(matches, ::Rule{:perm_rz}, tait::Tait)
     for v in vertices(tait)
+        is_open(tait, v) && continue
         hes = trace_vertex(tait, v)
-        length(hes) == 3 || continue
-        idx = findfirst(hes) do he
+        length(hes) >= 3 || continue
+        ids = findall(hes) do he
             is_genus(tait, dst(tait, he))
         end
-        idx === nothing && continue
-        he_genus = hes[idx]
-        # find half_edge on the other face that has a genus
-        he = twin(tait, σ_inv(tait, he_genus))
-        while !is_genus(tait, dst(tait, he))
-            he = next(tait, he)
+        length(ids) == 0 && continue
+        for idx in ids
+            he_genus = hes[idx]
+            # find half_edge on the other face that has a genus
+            he_out = he_genus
+            for _ in 2:(length(hes) - 1)
+                he_out = σ_inv(tait, he_out)
+                he = twin(tait, he_out)
+                he0 = he
+                while !is_genus(tait, dst(tait, he))
+                    he = next(tait, he)
+                    he == he0 && break
+                end
+                if he != he0 && dst(tait, he) != dst(tait, he_genus)
+                    push!(matches, Match{:perm_rz}(
+                        tait,
+                        [v, dst(tait, he)],
+                        [he_genus, he]
+                        )
+                    )
+                end
+            end
         end
-        push!(matches, Match{:perm_rz}(
-            tait,
-            [dst(tait, he), dst(tait, he_genus), src(tait, he_genus)],
-            hes,
-            )
-        )
     end
     return matches
 end
@@ -117,5 +128,6 @@ function has_open_half_edge(tait::Tait, hes)
 end
 
 function is_phase_zero(theta::Phase)
-    (theta.isparallel && iszero(theta.param)) || (theta.param < 0 && isinf(theta.param))
+    # TODO: it should be approx to 0
+    iszero(theta.param) || iszero(change_direction(theta.param))
 end

@@ -3,10 +3,47 @@ mutable struct Phase{T <: Number}
     isparallel::Bool
 end
 
-function change_direction!(p::Phase)
-    p.param = change_direction(p.param)
-    p.isparallel = !p.isparallel
-    return p
+Base.copy(p::Phase{T}) where T = Phase{T}(p.param, p.isparallel)
+function Base.:(+)(p1::Phase, p2::Phase)
+    if p1.isparallel == p2.isparallel
+        new_param = p1.param + p2.param
+        new_ispara = p1.isparallel
+    elseif !isinf(change_direction(p1.param))
+        new_param = change_direction(p1.param) + p2.param
+        new_ispara = p2.isparallel
+    elseif !isinf(change_direction(p2.param))
+        new_param = p1.param + change_direction(p2.param)
+        new_ispara = p1.isparallel
+    else
+        return !p1.isparallel ? p1 : p2
+    end
+    return Phase{typeof(new_param)}(new_param, new_ispara)
+end
+
+function change_direction(p::Phase)
+    new_param = change_direction(p.param)
+    new_isparallel = !p.isparallel
+    return Phase{typeof(new_param)}(new_param, new_isparallel)
+end
+
+function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
+    # triangle => star
+    p1.isparallel && (p1 = change_direction(p1))
+    !p2.isparallel && (p2 = change_direction(p2))
+    p3.isparallel && (p3 = change_direction(p3))
+    
+    q1_param, q2_param, q3_param = yang_baxter_param(p1.param, p2.param, p3.param)
+    q1, q2, q3 = Phase(q1_param, true), Phase(q2_param, false), Phase(q3_param, true)
+    return q1, q2, q3
+end
+function yang_baxter_param_inv(p1::Phase, p2::Phase, p3::Phase)
+    # star => triangle
+    !p1.isparallel && (p1 = change_direction(p1))
+    p2.isparallel && (p2 = change_direction(p2))
+    !p3.isparallel && (p3 = change_direction(p3))
+    
+    q1_param, q2_param, q3_param = yang_baxter_param_inv(p1.param, p2.param, p3.param)
+    return Phase(q1_param, false), Phase(q2_param, true), Phase(q3_param, false)
 end
 
 mutable struct Tait{P <: Phase}
@@ -50,22 +87,47 @@ neighbors(q::Tait, id) = neighbors(q.g, id)
 rem_face!(q::Tait, id) = rem_face!(q.g, id)
 update_face!(q::Tait, id) = update_face!(q.g, id)
 is_isolated(q::Tait, id) = is_isolated(q.g, id)
+add_vertex!(q::Tait, id) = add_vertex!(q.g, id)
+
+function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where P
+    (new_he1, new_he2) = add_edge!(q.g, v1, v2, f)
+    if !(0 in (new_he1, new_he2))
+        q.phases[new_he1] = p
+        q.phases[new_he2] = p
+    end
+    return (new_he1, new_he2)
+end
 
 function rem_vertex!(q::Tait, v::Integer; update::Bool = true)
+    for he in trace_vertex(q, v)
+        delete!(q.phases, twin(q, he))
+        delete!(q.phases, he)
+    end
     rem_vertex!(q.g, v; update = update)
     deleteat!(q.inputs, findall(isequal(v), q.inputs))
     deleteat!(q.outputs, findall(isequal(v), q.outputs))
     delete!(q.genuses, v)
     delete!(q.locations, v)
+    
     return q
 end
 
 function rem_edge!(q::Tait, he_id::Integer; update::Bool = true)
     twin_id = twin(q, he_id)
-    rem_edge!(q, he_id; update = update)
+    rem_edge!(q.g, he_id; update = update)
     delete!(q.phases, he_id)
     delete!(q.phases, twin_id)
 
+    return q
+end
+
+function contract_edge!(q::Tait, he_id::Integer)
+    twin_id = twin(q, he_id)
+    (v1, v2) = contract_edge!(q.g, he_id)
+    v2 in q.genuses && push!(q.genuses, v1)
+    delete!(q.phases, he_id)
+    delete!(q.phases, twin_id)
+    delete!(q.locations, v2)
     return q
 end
 
@@ -112,7 +174,12 @@ phases(q::Tait) = q.phases
 phase(q::Tait, he_id::Integer) = q.phases[he_id]
 genuses(q::Tait) = sort!(collect(q.genuses))
 is_genus(q::Tait, v::Integer) = (v in q.genuses)
-change_direction!(g::Tait, e_id::Integer) = change_direction!(g.phases[e_id])
+function change_direction!(q::Tait, e_id::Integer) 
+    p = change_direction(q.phases[e_id])
+    q.phases[e_id] = p
+    q.phases[twin(q, e_id)] = p
+    return q
+end
 is_open(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})

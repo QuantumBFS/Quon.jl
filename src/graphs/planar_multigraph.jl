@@ -116,7 +116,7 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
         he_prev = prev(g, he_id)
         twin_next = next(g, twin_id)
         twin_prev = prev(g, twin_id)
-        
+
         face_he = face(g, he_id)
         face_twin = face(g, twin_id)
 
@@ -138,6 +138,14 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
 
         g.next[he_prev] = twin_next
         g.next[twin_prev] = he_next
+
+        if he_next == twin_id
+            g.vs_isolated[src(g, he_next)] = face(g, he_next)
+            delete!(g.v2he, src(g, he_next))
+        elseif twin_next == he_id
+            g.vs_isolated[src(g, twin_next)] = face(g, twin_next)
+            delete!(g.v2he, src(g, twin_next))
+        end
     end
     delete!(g.next, he_id)
     delete!(g.next, twin_id)
@@ -238,4 +246,142 @@ function update_face!(g::PlanarMultigraph, he_id)
         (f in fs_rm) && (g.vs_isolated[v] = face_id)
     end
     return g
+end
+
+function add_vertex!(g::PlanarMultigraph, f::Integer)
+    haskey(g.f2he, f) || return 0
+    g.v_max += 1
+    v = g.v_max
+    g.vs_isolated[v] = f
+    return v
+end
+
+function add_edge_isolated_1!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
+    f == g.vs_isolated[v1] || return (0, 0)
+    hes = trace_vertex(g, v2) 
+    he2_in = 0
+    he2_out = 0
+    for he in hes
+        if face(g, twin(g, he)) == f
+            he2_in = twin(g, he)
+            he2_out = next(g, he2_in)
+            break
+        end
+    end
+    he2_in * he2_out != 0 || return (0, 0)
+
+    g.he_max += 2
+    new_he1 = g.he_max - 1
+    new_he2 = g.he_max
+    g.v2he[v1] = new_he2
+    g.twin[new_he1] = new_he2
+    g.twin[new_he2] = new_he1
+    g.next[he2_in] = new_he1
+    g.next[new_he1] = new_he2
+    g.next[new_he2] = he2_out
+    g.he2f[new_he1] = f
+    g.he2f[new_he2] = f
+    g.half_edges[new_he1] = HalfEdge(v2, v1)
+    g.half_edges[new_he2] = HalfEdge(v1, v2)
+    delete!(g.vs_isolated, v1)
+
+    return (new_he1, new_he2)
+end
+function add_edge_isolated_2!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
+    f == g.vs_isolated[v1] == g.vs_isolated[v2] || return (0, 0)
+    g.he_max += 2
+    new_he1 = g.he_max - 1
+    new_he2 = g.he_max
+    g.twin[new_he1] = new_he2
+    g.twin[new_he2] = new_he1
+    g.next[new_he1] = new_he2
+    g.next[new_he2] = new_he1
+    g.v2he[v1] = new_he1
+    g.v2he[v2] = new_he2
+    g.he2f[new_he1] = f
+    g.he2f[new_he2] = f
+    g.half_edges[new_he1] = HalfEdge(v1, v2)
+    g.half_edges[new_he2] = HalfEdge(v2, v1)
+    delete!(g.vs_isolated, v1)
+    delete!(g.vs_isolated, v2)
+
+    return (new_he1, new_he2)
+end
+
+function add_edge!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
+    if is_isolated(g, v1)
+        if is_isolated(g, v2)
+            return add_edge_isolated_2!(g, v1, v2, f)
+        else
+            return add_edge_isolated_1!(g, v1, v2, f)
+        end
+    elseif is_isolated(g, v2)
+        return add_edge_isolated_1!(g, v2, v1, f)
+    end
+    hes_f = trace_face(g, f)
+    he1_in, he1_out, he2_in, he2_out = (0,0,0,0)
+    for he in hes_f
+        dst(g, he) == v1 && (he1_in = he)
+        src(g, he) == v1 && (he1_out = he)
+        dst(g, he) == v2 && (he2_in = he)
+        src(g, he) == v2 && (he2_out = he)
+    end
+    he1_in * he1_out * he2_in * he2_out != 0 || return (0, 0)
+    new_he1 = g.he_max + 1
+    new_he2 = g.he_max + 2
+    g.he_max += 2
+    g.twin[new_he1] = new_he2
+    g.twin[new_he2] = new_he1
+    g.half_edges[new_he1] = HalfEdge(v1, v2)
+    g.half_edges[new_he2] = HalfEdge(v2, v1)
+    g.next[he1_in] = new_he1
+    g.next[new_he1] = he2_out
+    g.next[he2_in] = new_he2
+    g.next[new_he2] = he1_out
+    g.he2f[new_he1] = f
+    g.f2he[f] = new_he1
+    g.f_max += 1
+    g.he2f[new_he2] = g.f_max
+    g.f2he[g.f_max] = new_he2
+    update_face!(g, new_he2)
+    return (new_he1, new_he2)
+end
+
+function contract_edge!(g::PlanarMultigraph, he_id::Integer)
+    twin_id = twin(g, he_id)
+    he_prev = prev(g, he_id)
+    he_next = next(g, he_id)
+    twin_prev = prev(g, twin_id)
+    twin_next = next(g, twin_id)
+    
+    v1 = src(g, he_id)
+    v2 = dst(g, he_id)
+    for he in trace_vertex(g, v2)
+        v0 = dst(g, he)
+        g.half_edges[he] = HalfEdge(v1, v0)
+        g.half_edges[twin(g, he)] = HalfEdge(v0, v1)
+    end
+
+    if he_next == twin_id
+        g.next[he_prev] = twin_next
+        g.f2he[face(g, he_id)] = he_prev
+    elseif he_id == twin_next
+        g.next[twin_prev] = he_next
+        g.f2he[face(g, twin_id)] = twin_prev
+    else
+        g.next[he_prev] = he_next
+        g.next[twin_prev] = twin_next
+        g.f2he[face(g, he_id)] = he_prev
+        g.f2he[face(g, twin_id)] = twin_prev
+    end
+    delete!(g.next, he_id)
+    delete!(g.next, twin_id)
+    delete!(g.half_edges, he_id)
+    delete!(g.half_edges, twin_id)
+    delete!(g.twin, he_id)
+    delete!(g.twin, twin_id)
+    delete!(g.he2f, he_id)
+    delete!(g.he2f, twin_id)
+    delete!(g.v2he, v2)
+    return (v1, v2)
 end

@@ -24,3 +24,10 @@ c = merge_graph!(tait_copy(), tait_copy())
 contract_boundary_vertices!(c, [2], [9])
 contract_boundary_vertices!(c, [3], [8])
 @test c.g.vs_isolated[4] == 0
+
+rx = tait_rx(im)
+plot(rx)
+rx.g.next[8]
+rem_edge!(rx, 8; update = true)
+rem_edge!(rx, 11; update = true)
+@test length(rx.g.vs_isolated) == 1
