@@ -18,6 +18,7 @@ export planar_rx, planar_rz, planar_id, planar_copy, tait_rx, tait_rz, tait_id,
     tait_hadamard, tait_copy
 
 include("utils/yang_baxter.jl")
+include("phase.jl")
 include("graphs/planar_multigraph.jl")
 include("graphs/tait.jl")
 include("graphs/predefined.jl")
