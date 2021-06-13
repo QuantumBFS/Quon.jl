@@ -22,7 +22,7 @@ end
 end
 
 @testset "Yang-Baxter Rule" begin 
-    ry = contract!(contract!(tait_rz(0.0*im), tait_rx(-π/2*im)), tait_rz(π/2*im))
+    ry = contract!(contract!(tait_rz(pi/2*im), tait_rx(-π/2*im)), tait_rz(π/2*im))
     m1 = match(Rule{:yang_baxter_triangle}(), ry)
     @test length(m1) == 1
     rewrite!(ry, m1[1])
@@ -46,4 +46,31 @@ end
     @test length(rz2.phases) == 2
 
     plot(rz2)
+end
+
+@testset "CZ^2 = I" begin
+    cz = tait_cz()
+    contract!(cz, tait_cz())
+    m = match(Rule{:perm_rz}(), cz)
+    Quon.rewrite!(cz, m[3])
+    Quon.rewrite!(cz, m[9])
+    m_string_genus = match(Quon.Rule{:string_genus}(), cz)
+    @test length(m_string_genus) == 1
+    Quon.rewrite!(cz, m_string_genus[1])
+    m_fusion = match(Quon.Rule{:z_fusion}(), cz)
+    @test length(m_fusion) == 3
+    Quon.rewrite!(cz, m_fusion[1])
+    Quon.rewrite!(cz, m_fusion[2])
+    Quon.rewrite!(cz, m_fusion[3])
+    m_yb = match(Quon.Rule{:yang_baxter_triangle}(), cz)
+    @test length(m_yb) == 1
+    rewrite!(cz, m_yb[1])
+    m_id = match(Quon.Rule{:identity}(), cz)
+    Quon.rewrite!(cz, m_id[1])
+    Quon.rewrite!(cz, m_id[3])
+    Quon.rewrite!(cz, m_id[5])
+    @test length(m_id) == 6
+    m_gf = match(Rule(:genus_fusion), cz)
+    @test length(m_gf) == 2
+    rewrite!(cz, m_gf[2])
 end

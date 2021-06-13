@@ -26,4 +26,3 @@ plot(c)
 plot(tait_copy())
 
 tait_copy().genuses
-
