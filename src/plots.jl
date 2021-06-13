@@ -1,6 +1,33 @@
 using Compose
 
 function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "salmon", background = "white")
+    original_pos, normal_pos, x_len, y_len = generate_normalized_locations(q)
+    es, bds, hes_label, hes_x, hes_y, hes_rot = generate_half_edges_info(q, original_pos, normal_pos)
+    ct_edges = generate_context_edges(es, bds, hes_label, hes_x, hes_y, hes_rot, show_half_edges)
+    ct_vs = generate_context_vertices(q, normal_pos)
+    ct_fs = generate_context_faces(q, normal_pos, show_faces, face_color)
+
+    bg = (context(), rectangle(), fill(background))
+    set_default_graphic_size(3x_len*cm, 3y_len*cm)
+    return compose(context(), 
+        ct_vs, 
+        ct_edges, 
+        ct_fs,
+        bg
+    )
+end
+
+function generate_locations(q::Tait)
+    vs_boundary = [q.inputs; q.outputs; genuses(q)]
+    vs_proceeded
+    
+    frontier = copy(q.inputs)
+    while !isempty(frontier)
+
+    end
+end
+
+function generate_normalized_locations(q::Tait)
     x_min, x_max = (0.0, 1.0)
     y_min, y_max = (0.0, 1.0)
     for v in values(q.locations)
@@ -16,7 +43,10 @@ function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "
     for (k, v) in q.locations
         normal_pos[k] = ((v[1] - x_min + 0.5)/x_len, (v[2] - y_min + 0.5)/y_len)
     end
+    return original_pos, normal_pos, x_len, y_len
+end
 
+function generate_half_edges_info(q::Tait, original_pos, normal_pos)
     es = []
     bds = []
     boundaries = [q.inputs; q.outputs]
@@ -24,6 +54,7 @@ function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "
     hes_x = Float64[]
     hes_y = Float64[]
     hes_rot = Float64[]
+
     for he_id in half_edges(q)
         s = src(q, he_id)
         d = dst(q, he_id)
@@ -41,7 +72,10 @@ function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "
         push!(hes_y, (pos_s[2]+pos_d[2])/2)
         push!(hes_rot, angle((original_pos[d][1]-original_pos[s][1])+im*(original_pos[d][2]-original_pos[s][2])))
     end
-    
+    return es, bds, hes_label, hes_x, hes_y, hes_rot
+end
+
+function generate_context_edges(es, bds, hes_label, hes_x, hes_y, hes_rot, show_half_edges)
     ct_bds = (context(), line(bds), stroke("black"), linewidth(1mm))
     ct_es = (context(),
         (context(), line(es), stroke("white"), linewidth(0.8mm)),
@@ -53,7 +87,15 @@ function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "
         fill("gray"),
         fontsize(8pt)
     )
+    ct_edges = compose(context(), 
+        show_half_edges ? ct_hes : context(),
+        ct_es, 
+        ct_bds
+    )
+    return ct_edges
+end
 
+function generate_context_vertices(q, normal_pos)
     vs = vertices(q)
     vs_label = ["$v" for v in vs]
     vs_x = [normal_pos[v][1] for v in vs]
@@ -68,7 +110,10 @@ function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "
         )
         ct_vs = compose(context(), ct_vs, ct_v)
     end
+    return ct_vs
+end
 
+function generate_context_faces(q::Tait, normal_pos, show_faces, face_color)
     fs = faces(q)[2:end]
     fs_label = ["$f" for f in fs]
     fs_x = []
@@ -91,16 +136,8 @@ function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "
             )
         )
     end
-
-    bg = (context(), rectangle(), fill(background))
-    set_default_graphic_size(3x_len*cm, 3y_len*cm)
-    return compose(context(), 
-        show_faces ? ct_fs : context(), 
-        show_half_edges ? ct_hes : context(),
-        ct_vs, 
-        ct_es, 
-        ct_bds,
-        ct_polys,
-        bg
+    return compose(context(),
+        show_faces ? ct_fs : context(),
+        ct_polys
     )
 end
