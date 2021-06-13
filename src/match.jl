@@ -23,6 +23,7 @@ function Base.show(io::IO, m::Match)
 end
 
 struct Rule{T} end
+Rule(r::Symbol) = Rule{r}()
 
 Base.match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R, P}[], r, tait)
 
@@ -68,6 +69,7 @@ end
 
 function match!(matches, ::Rule{:x_fusion}, tait::Tait)
     for v in vertices(tait)
+        is_genus(tait, v) && continue
         hes = trace_vertex(tait, v)
         length(hes) == 2 || continue
         has_open_half_edge(tait, hes) || continue
@@ -114,8 +116,27 @@ end
 
 function match!(matches, ::Rule{:identity}, tait::Tait)
     for (he_id, theta) in tait.phases
-        if is_phase_zero(theta)
+        if is_phase_approx_zero(theta)
             push!(matches, Match{:identity}(tait, [], [he_id]))
+        end
+    end
+    return matches
+end
+
+function match!(matches, ::Rule{:genus_fusion}, tait::Tait)
+    for g in genuses(tait)
+        is_isolated(tait, g) && continue
+        hes_g = trace_vertex(tait, g)
+        for he_g in hes_g
+            face(tait, he_g) == 0 && continue
+            he = next(tait, he_g)
+            while he != he_g
+                v = src(tait, he)
+                if is_genus(tait, v)
+                    push!(matches, Match{:genus_fusion}(tait, [g, v], [he_g, he]))
+                end
+                he = next(tait, he)
+            end
         end
     end
     return matches
@@ -127,7 +148,6 @@ function has_open_half_edge(tait::Tait, hes)
     end
 end
 
-function is_phase_zero(theta::Phase)
-    # TODO: it should be approx to 0
-    iszero(theta.param) || iszero(change_direction(theta.param))
+function is_phase_approx_zero(theta::Phase)
+    return isapprox(0, theta.param; atol = quon_atol) || isapprox(0, change_direction(theta.param); atol = quon_atol)
 end

@@ -1,5 +1,7 @@
 # TODO: handling singularity
 
+const quon_atol = 1e-8
+
 change_direction(α) = log(-tanh(α/2))
 
 """
