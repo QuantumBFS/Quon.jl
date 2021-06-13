@@ -460,3 +460,21 @@ function tait_copy()
 
     return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
 end
+
+function tait_cz()
+    h = tait_hadamard()
+    c1 = tait_copy()
+    c2 = tait_copy()
+    contract!(c1, h, [3], [1])
+    c1.locations[23] = (4.0, 2.0)
+    c1.locations[16] = (3.0, 2.0)
+    c1.locations[7] = (1.0, 2.0)
+    c1.locations[2] = (1.0, 4.0)
+    c1.locations[4] = (2.0, 3.0)
+    c1.locations[6] = (0.0, 2.0)
+    contract!(c1, c2, [23], [2])
+    c1.locations[24] = (3.0, 0.0)
+    c1.locations[26] = (3.0, 4.0)
+    c1.locations[28] = (4.0, 2.0)
+    return c1
+end
