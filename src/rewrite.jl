@@ -39,7 +39,6 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_triangle})
         tait.phases[twin(tait, hes[1])] = q1
         tait.phases[twin(tait, hes[2])] = q2
         tait.phases[twin(tait, hes[3])] = q3
-        println(q1, q2, q3)
     end
     return tait
 end
