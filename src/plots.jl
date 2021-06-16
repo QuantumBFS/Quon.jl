@@ -137,14 +137,14 @@ function generate_context_edges(q::Tait, es, bds, hes_label, hes_x, hes_y, hes_r
         !(twin(q, he) in inner_hes) && push!(inner_hes, he)
     end
     inner_hes = sort(collect(inner_hes))
-    ct_bds = (context(), 
+    ct_bds = length(bd_hes) > 0 ? (context(), 
         curve([bds[he] for he in bd_hes], 
             [ctrl_points[he] for he in bd_hes], 
             [ctrl_points[twin(q, he)] for he in bd_hes],
             [bds[twin(q, he)] for he in bd_hes],
         ), 
         stroke("black"), linewidth(1mm)
-    )
+    ) : context()
     ct_es = !isempty(inner_hes) ? (context(),
         (context(), 
             curve([es[he] for he in inner_hes], 
