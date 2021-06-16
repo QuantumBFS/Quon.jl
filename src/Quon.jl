@@ -1,6 +1,5 @@
 module Quon
 
-using Compose: include
 export yang_baxter_param, yang_baxter_param_inv, change_direction, change_direction!
 export PlanarMultigraph, Tait,
     vertices, faces, half_edges,

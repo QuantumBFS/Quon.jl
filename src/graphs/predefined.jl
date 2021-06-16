@@ -327,6 +327,8 @@ function tait_hadamard()
     z2 = tait_rz(im*pi/2)
     contract!(z1, x)
     contract!(z1, z2)
+    z1.locations[2] = (0.0, 1.5)
+    z1.locations[4] = (2.0, 1.5)
     return z1
 end
 

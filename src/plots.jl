@@ -1,31 +1,39 @@
 using Compose
 
-function plot(q::Tait; show_half_edges = true, show_faces = true, face_color = "salmon", background = "white")
-    original_pos, normal_pos, x_len, y_len = generate_normalized_locations(q)
-    es, bds, hes_label, hes_x, hes_y, hes_rot = generate_half_edges_info(q, original_pos, normal_pos)
-    ct_edges = generate_context_edges(es, bds, hes_label, hes_x, hes_y, hes_rot, show_half_edges)
-    ct_vs = generate_context_vertices(q, normal_pos)
-    ct_fs = generate_context_faces(q, normal_pos, show_faces, face_color)
-
+function plot(q::Tait; show_string = true, show_tait = true, show_half_edges = true, show_faces = true, face_color = "salmon", background = "white", 
+        start_hes = Dict(), radius = 0.5)
+    x_len, y_len, normal_pos = generate_normalized_locations(q)
+    es, bds, hes_label, hes_x, hes_y, hes_rot = generate_half_edges_info(q, normal_pos)
+    ctrl_points = generate_ctrl_points(q, normal_pos, radius, start_hes)
+    update_half_edge_info!(q, hes_x, hes_y, hes_rot, normal_pos, ctrl_points)
+    ct_edges = generate_context_edges(q, es, bds, hes_label, hes_x, hes_y, hes_rot, ctrl_points, show_half_edges)
+    ct_vs, ct_genus = generate_context_vertices(q, normal_pos, show_tait)
+    ct_fs = generate_context_faces(q, normal_pos, ctrl_points, show_faces)
+    
     bg = (context(), rectangle(), fill(background))
-    set_default_graphic_size(3x_len*cm, 3y_len*cm)
-    return compose(context(), 
-        ct_vs, 
-        ct_edges, 
-        ct_fs,
+    set_default_graphic_size(3(x_len+1)*cm, 3(y_len+1)*cm)
+    ct_string = generate_string(q, hes_x, hes_y, hes_rot, radius/4)
+    return compose(
+        context(units=UnitBox(0, 0, x_len, y_len; 
+            leftpad=1.5cm, rightpad=1.5cm, toppad=1.5cm, bottompad=1.5cm)), 
+        show_string ? ct_string : context(),
+        ct_genus,
+        show_tait ? ct_vs : context(),
+        show_tait ? ct_edges : context(), 
+        show_tait ? ct_fs : context(),
         bg
     )
 end
 
-function generate_locations(q::Tait)
-    vs_boundary = [q.inputs; q.outputs; genuses(q)]
-    vs_proceeded
+# function generate_locations(q::Tait)
+#     vs_boundary = [q.inputs; q.outputs; genuses(q)]
+#     vs_proceeded
     
-    frontier = copy(q.inputs)
-    while !isempty(frontier)
+#     frontier = copy(q.inputs)
+#     while !isempty(frontier)
 
-    end
-end
+#     end
+# end
 
 function generate_normalized_locations(q::Tait)
     x_min, x_max = (0.0, 1.0)
@@ -36,54 +44,125 @@ function generate_normalized_locations(q::Tait)
         v[2] < y_min && (y_min = v[2])
         v[2] > y_max && (y_max = v[2])
     end
-    x_len = x_max - x_min + 1
-    y_len = y_max - y_min + 1
+    x_len = x_max - x_min
+    y_len = y_max - y_min
     original_pos = q.locations
     normal_pos = Dict()
     for (k, v) in q.locations
-        normal_pos[k] = ((v[1] - x_min + 0.5)/x_len, (v[2] - y_min + 0.5)/y_len)
+        normal_pos[k] = ((v[1] - x_min), (v[2] - y_min))
     end
-    return original_pos, normal_pos, x_len, y_len
+    return x_len, y_len, normal_pos
 end
 
-function generate_half_edges_info(q::Tait, original_pos, normal_pos)
-    es = []
-    bds = []
+function generate_half_edges_info(q::Tait, normal_pos)
+    es = Dict()
+    bds = Dict()
     boundaries = [q.inputs; q.outputs]
-    hes_label = String[]
-    hes_x = Float64[]
-    hes_y = Float64[]
-    hes_rot = Float64[]
+    hes_label = Dict()
+    hes_x = Dict()
+    hes_y = Dict()
+    hes_rot = Dict()
 
     for he_id in half_edges(q)
         s = src(q, he_id)
         d = dst(q, he_id)
         pos_s = normal_pos[s]
         pos_d = normal_pos[d]
-        if s < d
-            if s in boundaries || d in boundaries
-                push!(bds, [pos_s, pos_d])
-            else
-                push!(es, [pos_s, pos_d])
-            end
+        if s in boundaries || d in boundaries
+            bds[he_id] = pos_s
+        else
+            es[he_id] = pos_s
         end
-        push!(hes_label, "$he_id\n→")
-        push!(hes_x, (pos_s[1]+pos_d[1])/2)
-        push!(hes_y, (pos_s[2]+pos_d[2])/2)
-        push!(hes_rot, angle((original_pos[d][1]-original_pos[s][1])+im*(original_pos[d][2]-original_pos[s][2])))
+        hes_label[he_id] = "$he_id\n→"
+        hes_x[he_id] = (pos_s[1]+pos_d[1])/2
+        hes_y[he_id] = (pos_s[2]+pos_d[2])/2
+        hes_rot[he_id] = angle((normal_pos[d][1]-normal_pos[s][1])+im*(normal_pos[d][2]-normal_pos[s][2]))
     end
     return es, bds, hes_label, hes_x, hes_y, hes_rot
 end
 
-function generate_context_edges(es, bds, hes_label, hes_x, hes_y, hes_rot, show_half_edges)
-    ct_bds = (context(), line(bds), stroke("black"), linewidth(1mm))
-    ct_es = (context(),
-        (context(), line(es), stroke("white"), linewidth(0.8mm)),
-        (context(), line(es), stroke("black"), linewidth(1.2mm)),
+function generate_ctrl_points(q::Tait, normal_pos, radius, start_hes)
+    ctrl_points = Dict()
+    for v in vertices(q)
+        if !haskey(start_hes, v)
+            hes = trace_vertex(q, v)
+            n = length(hes)
+            θ = -π/2
+            pos_v = normal_pos[v]
+            for i in 1:n
+                he = hes[i]
+                θ += 2π/n
+                ctrl_points[he] = (pos_v[1] + cos(θ)*radius, pos_v[2] - sin(θ)*radius)
+            end
+        else
+            start_he, θ = start_hes[v]
+            hes_v = trace_vertex(q, v)
+            n = length(hes_v)
+            thetas = [2π*i/n for i = 1:n]
+            start_id = findfirst(isequal(start_he), hes_v)
+            thetas .+= θ - thetas[start_id]
+            pos_v = normal_pos[v]
+            for i = 1:n
+                he = hes_v[i]
+                ctrl_points[he] = (pos_v[1] + cos(thetas[i])*radius, pos_v[2] - sin(thetas[i])*radius)
+            end
+        end
+    end
+    return ctrl_points
+end
+
+function update_half_edge_info!(q::Tait, hes_x, hes_y, hes_rot, normal_pos, ctrl_points)
+    for he in half_edges(q)
+        hes_x[he] = hes_x[he]/4 + 3/8*(ctrl_points[he][1] + ctrl_points[twin(q, he)][1])
+        hes_y[he] = hes_y[he]/4 + 3/8*(ctrl_points[he][2] + ctrl_points[twin(q, he)][2])
+        s = src(q, he)
+        d = dst(q, he)
+        
+        hes_rot[he] = angle(
+            (normal_pos[d][1] + ctrl_points[twin(q, he)][1] - normal_pos[s][1] - ctrl_points[he][1])
+                + im * (normal_pos[d][2] + ctrl_points[twin(q, he)][2] - normal_pos[s][2] - ctrl_points[he][2])
+        )
+    end
+    return 
+end
+
+function generate_context_edges(q::Tait, es, bds, hes_label, hes_x, hes_y, hes_rot, ctrl_points, show_half_edges)
+    bd_hes = Set{Int}()
+    for he in keys(bds)
+        !(twin(q, he) in bd_hes) && push!(bd_hes, he)
+    end
+    bd_hes = sort(collect(bd_hes))
+    inner_hes = Set{Int}()
+    for he in keys(es)
+        !(twin(q, he) in inner_hes) && push!(inner_hes, he)
+    end
+    inner_hes = sort(collect(inner_hes))
+    ct_bds = (context(), 
+        curve([bds[he] for he in bd_hes], 
+            [ctrl_points[he] for he in bd_hes], 
+            [ctrl_points[twin(q, he)] for he in bd_hes],
+            [bds[twin(q, he)] for he in bd_hes],
+        ), 
+        stroke("black"), linewidth(1mm)
     )
-    rot = Rotation.(hes_rot, hes_x, hes_y)
+    ct_es = !isempty(inner_hes) ? (context(),
+        (context(), 
+            curve([es[he] for he in inner_hes], 
+                [ctrl_points[he] for he in inner_hes], 
+                [ctrl_points[twin(q, he)] for he in inner_hes],
+                [es[twin(q, he)] for he in inner_hes],
+            ), stroke("white"), linewidth(0.8mm)),
+        (context(), 
+            curve([es[he] for he in inner_hes], 
+                [ctrl_points[he] for he in inner_hes], 
+                [ctrl_points[twin(q, he)] for he in inner_hes],
+                [es[twin(q, he)] for he in inner_hes],
+            ), stroke("black"), linewidth(1.2mm)),
+    ) : context()
+    rot = [Rotation(hes_rot[he], hes_x[he], hes_y[he]) for he in half_edges(q)]
     ct_hes = (context(), 
-        text(hes_x, hes_y, hes_label, [hcenter], [vbottom], rot), 
+        text([hes_x[he] for he in half_edges(q)], [hes_y[he] for he in half_edges(q)], 
+            [hes_label[he] for he in half_edges(q)], [hcenter], [vbottom], rot), 
         fill("gray"),
         fontsize(8pt)
     )
@@ -95,49 +174,194 @@ function generate_context_edges(es, bds, hes_label, hes_x, hes_y, hes_rot, show_
     return ct_edges
 end
 
-function generate_context_vertices(q, normal_pos)
+function generate_context_vertices(q, normal_pos, show_tait)
     vs = vertices(q)
     vs_label = ["$v" for v in vs]
     vs_x = [normal_pos[v][1] for v in vs]
     vs_y = [normal_pos[v][2] for v in vs]
     ct_vs = context()
+    ct_genus = context()
     for i in 1:length(vs)
-        ct_v = (context(vs_x[i]*w-0.5cm, vs_y[i]*h-0.5cm, 1cm, 1cm),
-            is_genus(q, vs[i]) ? (context(), arc([0.5], [0.4, 0.8], [0.4cm, 0.2cm], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("black"), linewidth(0.5mm)) : context(),
-            (context(), text(0.5, 0.5, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
-
-            (context(), circle(), is_open(q, vs[i]) ? fill("black") : fill("white"), stroke("black"), linewidth(0.8mm)),
-        )
-        ct_vs = compose(context(), ct_vs, ct_v)
+        if is_isolated(q, vs[i])
+            ct_v = compose(
+                context(vs_x[i]-0.1, vs_y[i]-0.1, 0.2, 0.2),
+                (
+                    context(units = UnitBox(2,2)),
+                    is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("black"), linewidth(0.5mm)) : context(),
+                    (context(), text(1, 1, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
+                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("black") : fill("white"), 
+                        (is_genus(q, vs[i]) && !show_tait) ? stroke("royalblue") : stroke("black"), linewidth(1)
+                    )
+                )
+            )
+        else
+            ct_v = compose(
+                context(vs_x[i]-0.15, vs_y[i]-0.15, 0.3, 0.3),
+                (
+                    context(units = UnitBox(2,2)),
+                    is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("black"), linewidth(0.5mm)) : context(),
+                    (context(), text(1, 1, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
+                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("black") : fill("white"), 
+                        (is_genus(q, vs[i]) && !show_tait) ? stroke("white") : stroke("black"), linewidth(0.5)
+                    )
+                )
+            )
+        end
+        if is_genus(q, vs[i])
+            ct_genus = compose(context(), ct_genus, ct_v)
+        else
+            ct_vs = compose(context(), ct_vs, ct_v)
+        end
     end
-    return ct_vs
+    return ct_vs, ct_genus
 end
 
-function generate_context_faces(q::Tait, normal_pos, show_faces, face_color)
+function generate_context_faces(q::Tait, normal_pos, ctrl_points, show_faces)
     fs = faces(q)[2:end]
     fs_label = ["$f" for f in fs]
     fs_x = []
     fs_y = []
-    fs_points = []
+    ct_bezi = compose(context())
     for f in fs
         hes_f = trace_face(q, f)
         vs_f = [src(q, he) for he in hes_f]
-        push!(fs_x, sum([normal_pos[v][1] for v in vs_f])/length(vs_f))
-        push!(fs_y, sum([normal_pos[v][2] for v in vs_f])/length(vs_f))
-        push!(fs_points, [(normal_pos[v][1], normal_pos[v][2]) for v in vs_f])
+        push!(fs_x, (sum([(ctrl_points[he][1] + ctrl_points[twin(q, he)][1])/2 for he in hes_f])*0.5 + sum([normal_pos[v][1] for v in vs_f])*0.5)/(length(vs_f)))
+        push!(fs_y, (sum([(ctrl_points[he][2] + ctrl_points[twin(q, he)][2])/2 for he in hes_f])*0.5 + sum([normal_pos[v][2] for v in vs_f])*0.5)/(length(vs_f)))
+        start_point = normal_pos[src(q, hes_f[1])]
+        bz_ctrls = [[ctrl_points[he], ctrl_points[twin(q, he)], normal_pos[dst(q, he)]] for he in hes_f]
+        ct_bezi_f = compose(context(), 
+            bezigon(start_point, bz_ctrls), fill("salmon")
+        )
+        ct_bezi = compose(context(), ct_bezi, ct_bezi_f)
     end
     ct_fs = (context(), text(fs_x, fs_y, fs_label, [hcenter], [vcenter]), fill("blue"), font("Helvetica-Bold"))
-    ct_polys = context()
-    for ps in fs_points
-        ct_polys = compose(context(), 
-            ct_polys,
-            (context(), polygon(ps), fill(face_color), 
-                # fillopacity(0.3)
-            )
-        )
-    end
     return compose(context(),
         show_faces ? ct_fs : context(),
-        ct_polys
+        show_faces ? ct_bezi : context(),
     )
+end
+
+function generate_string(q::Tait, hes_x, hes_y, hes_rot, radius)
+    ct_string = compose(context())
+    ct_phase = compose(context())
+    for f in faces(q)
+        f == 0 && continue
+        he_start = surrounding_half_edge(q, f)
+        he_curr = he_start
+        he_next = next(q, he_curr)
+        ct_radius = 3radius
+        while true
+            if !(is_open(q, dst(q, he_curr)) && is_open(q, src(q, he_next)))
+                if is_open(q, src(q, he_curr))
+                    pos_curr = (hes_x[he_curr] + radius*cos(hes_rot[he_curr]-π/2), hes_y[he_curr] + radius*sin(hes_rot[he_curr]-π/2))
+                    ctrl_curr = (pos_curr[1] + ct_radius*cos(hes_rot[he_curr]), pos_curr[2] + ct_radius*sin(hes_rot[he_curr]))
+                else
+                    pos_curr = (hes_x[he_curr], hes_y[he_curr])
+                    ctrl_curr = (pos_curr[1] + ct_radius*cos(hes_rot[he_curr] - π/4), pos_curr[2] + ct_radius*sin(hes_rot[he_curr] - π/4))
+                end
+                if is_open(q, dst(q, he_next))
+                    pos_next = (hes_x[he_next] + radius*cos(hes_rot[he_next]-π/2), hes_y[he_next] + radius*sin(hes_rot[he_next]-π/2))
+                    ctrl_next = (pos_next[1] + ct_radius*cos(hes_rot[he_next]-π), pos_next[2] + ct_radius*sin(hes_rot[he_next]-π))
+                else
+                    pos_next = (hes_x[he_next], hes_y[he_next])
+                    ctrl_next = (pos_next[1] + ct_radius*cos(hes_rot[he_next] - 3π/4), pos_next[2] + ct_radius*sin(hes_rot[he_next] - 3π/4))
+                end
+                ct_string = compose(
+                    ct_string,
+                    (context(), 
+                    curve(
+                        [pos_curr], [ctrl_curr], 
+                        [ctrl_next], [pos_next],
+                    ),
+                    stroke("royalblue"), linewidth(1mm))
+                )
+            end
+            he_curr = he_next
+            he_next = next(q, he_curr)
+            (he_curr == he_start) && break
+        end
+    end
+    hes = Set(half_edges(q))
+    while !isempty(hes)
+        he = pop!(hes)
+        if !is_open(q, src(q, he)) && !is_open(q, dst(q, he))
+            θ = hes_rot[he]
+            crx = generate_phase(hes_x[he], hes_y[he], θ, phase(q, he))
+            ct_phase = compose(context(), ct_phase, crx)
+        end
+        delete!(hes, twin(q, he))
+    end
+    return compose(context(), ct_phase, ct_string)
+end
+
+function generate_phase(x, y, θ, p)
+    if (isapprox(p.param, π/2*im; atol = quon_atol) && !p.isparallel) ||
+        (isapprox(p.param, -π/2*im; atol = quon_atol) && p.isparallel)
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))),
+        )
+    elseif (isapprox(p.param, -π/2*im; atol = quon_atol) && !p.isparallel) ||
+        (isapprox(p.param, π/2*im; atol = quon_atol) && p.isparallel)
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+7π/4), sin(θ+7π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))),
+        )
+    elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
+        isapprox(rem(imag(p.param), 2π, RoundDown), π; atol = quon_atol) && p.isparallel)
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), circle(cos(θ+π/2)/sqrt(2), sin(θ+π/2)/sqrt(2), 0.4), fill("black")),
+                (context(), circle(cos(θ+3π/2)/sqrt(2), sin(θ+3π/2)/sqrt(2), 0.4), fill("black")),
+                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+3π/4), sin(θ+3π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))
+            ),
+        )
+    elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
+            isapprox(rem(imag(p.param), 2π, RoundDown), π; atol = quon_atol) && !p.isparallel)
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), circle(cos(θ)/sqrt(2), sin(θ)/sqrt(2), 0.4), fill("black")),
+                (context(), circle(cos(θ+π)/sqrt(2), sin(θ+π)/sqrt(2), 0.4), fill("black")),
+                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+π/4), sin(θ+π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))
+            ),
+        )
+    elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
+        isapprox(rem(imag(p.param), 2π, RoundDown), 0; atol = quon_atol) && p.isparallel)
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+3π/4), sin(θ+3π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))
+            ),
+        )
+    elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
+            isapprox(rem(imag(p.param), 2π, RoundDown), 0; atol = quon_atol) && !p.isparallel)
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+π/4), sin(θ+π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))
+            ),
+        )
+    else
+        return compose(
+            context(x-0.1, y-0.1, 0.2, 0.2),
+            (context(units=UnitBox(-1, -1, 2, 2)),
+                (context(), text(0, 0, (p.isparallel ? "→" : "↑") * "$(p.param)", hcenter, vcenter, Rotation(θ, 0, 0)), fontsize(2)),
+                (context(), circle(0, 0, 1), fill("white"), stroke("black"))
+            ),
+        )
+    end
 end
