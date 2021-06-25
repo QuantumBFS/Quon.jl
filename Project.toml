@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 Compose = "0.9"

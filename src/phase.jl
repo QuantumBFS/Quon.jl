@@ -1,6 +1,18 @@
+using Printf
+
 mutable struct Phase{T <: Number}
     param::T
     isparallel::Bool
+end
+
+function Base.show(io::IO, p::Phase)
+    print(io, p.isparallel ? "→ " : "↓ ")
+    re = real(p.param)
+    ig = imag(p.param)
+    if !isapprox(re, 0; atol = quon_atol)
+        @printf(io, "%.3f + ", re)
+    end
+    @printf(io, "%.3f im", ig)
 end
 
 Base.copy(p::Phase{T}) where T = Phase{T}(p.param, p.isparallel)
