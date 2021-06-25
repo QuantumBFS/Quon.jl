@@ -143,7 +143,7 @@ function generate_context_edges(q::Tait, es, bds, hes_label, hes_x, hes_y, hes_r
             [ctrl_points[twin(q, he)] for he in bd_hes],
             [bds[twin(q, he)] for he in bd_hes],
         ), 
-        stroke("black"), linewidth(1mm)
+        stroke("gray"), linewidth(1mm)
     ) : context()
     ct_es = !isempty(inner_hes) ? (context(),
         (context(), 
@@ -151,13 +151,13 @@ function generate_context_edges(q::Tait, es, bds, hes_label, hes_x, hes_y, hes_r
                 [ctrl_points[he] for he in inner_hes], 
                 [ctrl_points[twin(q, he)] for he in inner_hes],
                 [es[twin(q, he)] for he in inner_hes],
-            ), stroke("white"), linewidth(0.8mm)),
+            ), stroke("white"), linewidth(0.6mm)),
         (context(), 
             curve([es[he] for he in inner_hes], 
                 [ctrl_points[he] for he in inner_hes], 
                 [ctrl_points[twin(q, he)] for he in inner_hes],
                 [es[twin(q, he)] for he in inner_hes],
-            ), stroke("black"), linewidth(1.2mm)),
+            ), stroke("gray"), linewidth(1.2mm)),
     ) : context()
     rot = [Rotation(hes_rot[he], hes_x[he], hes_y[he]) for he in half_edges(q)]
     ct_hes = (context(), 
@@ -187,10 +187,10 @@ function generate_context_vertices(q, normal_pos, show_tait)
                 context(vs_x[i]-0.1, vs_y[i]-0.1, 0.2, 0.2),
                 (
                     context(units = UnitBox(2,2)),
-                    is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("black"), linewidth(0.5mm)) : context(),
+                    is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("royalblue"), linewidth(0.5mm)) : context(),
                     (context(), text(1, 1, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
-                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("black") : fill("white"), 
-                        (is_genus(q, vs[i]) && !show_tait) ? stroke("royalblue") : stroke("black"), linewidth(1)
+                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("royalblue") : fill("white"), 
+                        (is_genus(q, vs[i]) && !show_tait) ? stroke("black") : stroke("royalblue"), linewidth(1)
                     )
                 )
             )
@@ -199,10 +199,10 @@ function generate_context_vertices(q, normal_pos, show_tait)
                 context(vs_x[i]-0.15, vs_y[i]-0.15, 0.3, 0.3),
                 (
                     context(units = UnitBox(2,2)),
-                    is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("black"), linewidth(0.5mm)) : context(),
+                    is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("royalblue"), linewidth(0.5mm)) : context(),
                     (context(), text(1, 1, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
-                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("black") : fill("white"), 
-                        (is_genus(q, vs[i]) && !show_tait) ? stroke("white") : stroke("black"), linewidth(0.5)
+                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("royalblue") : fill("white"), 
+                        (is_genus(q, vs[i]) && !show_tait) ? stroke("white") : stroke("royalblue"), linewidth(0.5)
                     )
                 )
             )
@@ -230,7 +230,7 @@ function generate_context_faces(q::Tait, normal_pos, ctrl_points, show_faces)
         start_point = normal_pos[src(q, hes_f[1])]
         bz_ctrls = [[ctrl_points[he], ctrl_points[twin(q, he)], normal_pos[dst(q, he)]] for he in hes_f]
         ct_bezi_f = compose(context(), 
-            bezigon(start_point, bz_ctrls), fill("salmon")
+            bezigon(start_point, bz_ctrls), fill("salmon"), fillopacity(0.3),
         )
         ct_bezi = compose(context(), ct_bezi, ct_bezi_f)
     end
@@ -273,7 +273,7 @@ function generate_string(q::Tait, hes_x, hes_y, hes_rot, radius)
                         [pos_curr], [ctrl_curr], 
                         [ctrl_next], [pos_next],
                     ),
-                    stroke("royalblue"), linewidth(1mm))
+                    stroke("black"), linewidth(1mm))
                 )
             end
             he_curr = he_next
@@ -300,7 +300,7 @@ function generate_phase(x, y, θ, p)
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
-                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))),
         )
     elseif (isapprox(p.param, -π/2*im; atol = quon_atol) && !p.isparallel) ||
@@ -308,7 +308,7 @@ function generate_phase(x, y, θ, p)
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
-                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+7π/4), sin(θ+7π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+7π/4), sin(θ+7π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))),
         )
     elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
@@ -318,8 +318,8 @@ function generate_phase(x, y, θ, p)
             (context(units=UnitBox(-1, -1, 2, 2)),
                 (context(), circle(cos(θ+π/2)/sqrt(2), sin(θ+π/2)/sqrt(2), 0.4), fill("black")),
                 (context(), circle(cos(θ+3π/2)/sqrt(2), sin(θ+3π/2)/sqrt(2), 0.4), fill("black")),
-                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+3π/4), sin(θ+3π/4))]), stroke("royalblue"), linewidth(1)),
-                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+3π/4), sin(θ+3π/4))]), stroke("black"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))
             ),
         )
@@ -330,8 +330,8 @@ function generate_phase(x, y, θ, p)
             (context(units=UnitBox(-1, -1, 2, 2)),
                 (context(), circle(cos(θ)/sqrt(2), sin(θ)/sqrt(2), 0.4), fill("black")),
                 (context(), circle(cos(θ+π)/sqrt(2), sin(θ+π)/sqrt(2), 0.4), fill("black")),
-                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
-                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+π/4), sin(θ+π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("black"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+π/4), sin(θ+π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))
             ),
         )
@@ -340,8 +340,8 @@ function generate_phase(x, y, θ, p)
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
-                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+3π/4), sin(θ+3π/4))]), stroke("royalblue"), linewidth(1)),
-                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+3π/4), sin(θ+3π/4))]), stroke("black"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))
             ),
         )
@@ -350,8 +350,8 @@ function generate_phase(x, y, θ, p)
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
-                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("royalblue"), linewidth(1)),
-                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+π/4), sin(θ+π/4))]), stroke("royalblue"), linewidth(1)),
+                (context(), line([(cos(θ+3π/4), sin(θ+3π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("black"), linewidth(1)),
+                (context(), line([(cos(θ+7π/4), sin(θ+7π/4)), (cos(θ+π/4), sin(θ+π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))
             ),
         )
@@ -359,7 +359,7 @@ function generate_phase(x, y, θ, p)
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
-                (context(), text(0, 0, (p.isparallel ? "→" : "↑") * "$(p.param)", hcenter, vcenter, Rotation(θ, 0, 0)), fontsize(2)),
+                (context(), text(0, 0, "$p", hcenter, vcenter, Rotation(θ, 0, 0)), fontsize(1.5)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))
             ),
         )
