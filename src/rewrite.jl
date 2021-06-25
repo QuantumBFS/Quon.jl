@@ -21,24 +21,39 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_triangle})
     hes = m.half_edges
     vs = [src(tait, he) for he in hes]
     f = face(tait, hes[1])
-    p1, p2, p3 = (phase(tait, hes[1]), phase(tait, hes[3]), phase(tait, hes[2]))
-    if !is_singular_yang_baxter(p1, p2, p3)
-        q1, q2, q3 = yang_baxter_param(p1, p2, p3)
-        new_v = add_vertex!(tait, f)
-        add_edge!(tait, vs[1], new_v, face(tait, hes[1]), q1)
-        add_edge!(tait, vs[2], new_v, face(tait, hes[2]), q2)
-        add_edge!(tait, vs[3], new_v, face(tait, hes[3]), q3)
-        for he in hes 
-            rem_edge!(tait, he; update = true)
+    for ids in [(1, 2, 3), (2, 3, 1), (3, 1, 2)]
+        p1, p2, p3 = (phase(tait, hes[ids[1]]), phase(tait, hes[ids[3]]), phase(tait, hes[ids[2]]))
+        if !is_singular_yang_baxter(p1, p2, p3)
+            q1, q2, q3 = yang_baxter_param(p1, p2, p3)
+            new_v = add_vertex!(tait, f)
+            add_edge!(tait, vs[ids[1]], new_v, face(tait, hes[ids[1]]), q1)
+            add_edge!(tait, vs[ids[2]], new_v, face(tait, hes[ids[2]]), q2)
+            add_edge!(tait, vs[ids[3]], new_v, face(tait, hes[ids[3]]), q3)
+            for he in hes 
+                rem_edge!(tait, he; update = true)
+            end
+            break
         end
-    else
-        q1, q2, q3 = update_yang_baxter_triangle(p1, p2, p3)
-        tait.phases[hes[1]] = q1
-        tait.phases[hes[2]] = q2
-        tait.phases[hes[3]] = q3
-        tait.phases[twin(tait, hes[1])] = q1
-        tait.phases[twin(tait, hes[2])] = q2
-        tait.phases[twin(tait, hes[3])] = q3
+    end
+    return tait
+end
+
+function rewrite!(tait::Tait, m::Match{:charge_rm_f})
+    hes = m.half_edges
+    p0 = Phase(0.0*im, false)
+    for he in hes
+        tait.phases[he] = p0
+        tait.phases[twin(tait, he)] = p0
+    end
+    return tait
+end
+
+function rewrite!(tait::Tait, m::Match{:charge_rm_v})
+    hes = m.half_edges
+    p0 = Phase(0.0*im, true)
+    for he in hes
+        tait.phases[he] = p0
+        tait.phases[twin(tait, he)] = p0
     end
     return tait
 end

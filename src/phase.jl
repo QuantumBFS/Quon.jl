@@ -106,7 +106,7 @@ function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
     p1.isparallel && (p1 = change_direction(p1))
     !p2.isparallel && (p2 = change_direction(p2))
     p3.isparallel && (p3 = change_direction(p3))
-
+    
     q1_param, q2_param, q3_param = yang_baxter_param(p1.param, p2.param, p3.param)
     q1, q2, q3 = Phase(q1_param, true), Phase(q2_param, false), Phase(q3_param, true)
     return q1, q2, q3

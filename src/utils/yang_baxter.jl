@@ -24,6 +24,7 @@ Return α2, β2, γ2 according to the Yang-Baxter equation:
 function yang_baxter_param(α1, β1, γ1)
     s1 = (α1+γ1)/2
     m1 = (α1-γ1)/2
+    @assert !(cosh(s1) ≈ 1) && !(sinh(s1) ≈ 1)
     tanh_s2 = tanh(β1/2)*cosh(m1)/cosh(s1)
     tanh_m2 = -tanh(β1/2)*sinh(m1)/sinh(s1)
     @assert !(tanh_s2 ≈ 1) && !(tanh_s2 ≈ -1)

@@ -56,6 +56,53 @@ function match!(matches, ::Rule{:yang_baxter_triangle}, tait::Tait)
     return matches
 end
 
+function match!(matches, ::Rule{:charge_rm_v}, tait::Tait)
+    for (v, _) in tait.g.v2he
+        is_open(tait, v) && continue
+        hes = trace_vertex(tait, v)
+        ismatch = true
+        for he in hes
+            haskey(tait.phases, he) || (ismatch = false; break)
+            p = phase(tait, he)
+            if !p.isparallel
+                if !is_singular_change_direction(p)
+                    change_direction!(tait, he)
+                else
+                    ismatch = false; break
+                end
+            end
+            isapprox(real(p.param), 0; atol = quon_atol) || (ismatch = false; break)
+            isapprox(rem2pi(imag(p.param), RoundDown), π; atol = quon_atol) || (ismatch = false; break)
+        end
+        ismatch && push!(matches, Match{:charge_rm_v}(tait, [v], hes))
+    end
+    return matches
+end
+
+function match!(matches, ::Rule{:charge_rm_f}, tait::Tait)
+    for f in faces(tait)
+        f == 0 && continue
+        hes = trace_face(tait, f)
+        has_open_half_edge(tait, hes) || continue
+        ismatch = true
+        for he in hes
+            haskey(tait.phases, he) || (ismatch = false; break)
+            p = phase(tait, he)
+            if p.isparallel
+                if !is_singular_change_direction(p)
+                    change_direction!(tait, he)
+                else
+                    ismatch = false; break
+                end
+            end
+            isapprox(real(p.param), 0; atol = quon_atol) || (ismatch = false; break)
+            isapprox(rem2pi(imag(p.param), RoundDown), π; atol = quon_atol) || (ismatch = false; break)
+        end
+        push!(matches, Match{:charge_rm_f}(tait, [], hes))
+    end
+    return matches
+end
+
 function match!(matches, ::Rule{:z_fusion}, tait::Tait)
     for f in faces(tait)
         f == 0 && continue
