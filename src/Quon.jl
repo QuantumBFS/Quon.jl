@@ -1,6 +1,5 @@
 module Quon
 
-using Compose: include
 export yang_baxter_param, yang_baxter_param_inv, change_direction, change_direction!
 export PlanarMultigraph, Tait,
     vertices, faces, half_edges,
@@ -15,8 +14,8 @@ export PlanarMultigraph, Tait,
 export contract!, contract_boundary_vertices!, 
     tensor_product!, merge_boundary_vertices!,
     phases, phases, genuses, is_genus, is_open
-export planar_rx, planar_rz, planar_id, planar_copy, tait_rx, tait_rz, tait_id,
-    tait_hadamard, tait_copy, tait_cz
+export planar_rx, planar_rz, planar_id, planar_copy, planar_zero_state, tait_rx, tait_rz, tait_id,
+    tait_hadamard, tait_copy, tait_cz, tait_zero_state
 
 include("utils/yang_baxter.jl")
 include("phase.jl")

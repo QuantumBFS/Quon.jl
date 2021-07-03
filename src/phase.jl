@@ -1,6 +1,18 @@
+using Printf
+
 mutable struct Phase{T <: Number}
     param::T
     isparallel::Bool
+end
+
+function Base.show(io::IO, p::Phase)
+    print(io, p.isparallel ? "→ " : "↓ ")
+    re = real(p.param)
+    ig = imag(p.param)
+    if !isapprox(re, 0; atol = quon_atol)
+        @printf(io, "%.3f + ", re)
+    end
+    @printf(io, "%.3f im", ig)
 end
 
 Base.copy(p::Phase{T}) where T = Phase{T}(p.param, p.isparallel)
@@ -94,7 +106,7 @@ function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
     p1.isparallel && (p1 = change_direction(p1))
     !p2.isparallel && (p2 = change_direction(p2))
     p3.isparallel && (p3 = change_direction(p3))
-
+    
     q1_param, q2_param, q3_param = yang_baxter_param(p1.param, p2.param, p3.param)
     q1, q2, q3 = Phase(q1_param, true), Phase(q2_param, false), Phase(q3_param, true)
     return q1, q2, q3

@@ -327,6 +327,8 @@ function tait_hadamard()
     z2 = tait_rz(im*pi/2)
     contract!(z1, x)
     contract!(z1, z2)
+    z1.locations[2] = (0.0, 1.5)
+    z1.locations[4] = (2.0, 1.5)
     return z1
 end
 
@@ -478,4 +480,74 @@ function tait_cz()
     c1.locations[26] = (3.0, 3.0)
     c1.locations[28] = (4.0, 1.0)
     return c1
+end
+
+function planar_zero_state()
+    v2he = Dict{Int, Int}(
+        1 => 1,
+        2 => 2,
+    )
+    half_edges = Dict{Int, HalfEdge}(
+        1 => HalfEdge(1, 2),
+        2 => HalfEdge(2, 1),
+        3 => HalfEdge(1, 2),
+        4 => HalfEdge(2, 1),
+        5 => HalfEdge(1, 2),
+        6 => HalfEdge(2, 1),
+    )
+    
+    f2he = Dict{Int, Int}(
+        0 => 2,
+        1 => 1,
+        2 => 3,
+    )
+    he2f = Dict{Int, Int}(
+        2 => 0,
+        5 => 0,
+        
+        1 => 1,
+        4 => 1,
+
+        3 => 2,
+        6 => 2,
+    )    
+    next = Dict{Int, Int}(
+        2 => 5,
+        5 => 2,
+
+        1 => 4,
+        4 => 1,
+
+        3 => 6,
+        6 => 3,
+    )
+    twin = Dict{Int, Int}(
+        1 => 2,
+        2 => 1,
+        3 => 4,
+        4 => 3,
+        5 => 6,
+        6 => 5,
+    )
+    vs_isolated = Dict{Int, Int}()
+    zero_state = PlanarMultigraph(v2he, half_edges,
+        f2he, he2f,
+        next, twin, vs_isolated,
+        2, 6, 2
+    )
+    return zero_state
+end
+
+function tait_zero_state()
+    g = planar_zero_state()
+    phases = Dict{Int, Phase{ComplexF64}}()
+    inputs = Int[]
+    outputs = Int[2]
+    genuses = Set([1])
+    locations = Dict(
+        1 => (1.0, 0.0),
+        2 => (1.0, 1.0),
+    )
+
+    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
 end

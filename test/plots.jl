@@ -2,7 +2,7 @@ using Quon
 
 rz = tait_rz(im*pi)
 contract_boundary_vertices!(rz, [1], [5])
-plot(rz)
+plot(rz; radius = 0.5)
 rz = tait_rz(im*pi)
 rx = tait_rx(im*pi)
 p1 = plot(rz; background = "white")
