@@ -106,6 +106,26 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
 
     # handle self-loop
     if next(g, twin(g, he_id)) == twin(g, he_id)
+        if next(g, he_id) == he_id  # isolated self-loop
+            v_loop = src(g, he_id)
+            twin_id = twin(g, he_id)
+            he_in = (surrounding_half_edge(g, face(g, he_id)) == he_id) ? he_id : twin_id
+            he_out = twin(g, he_in)
+            f_in = face(g, he_in)
+            f_out = face(g, he_out)
+            rem_face!(g, f_in)
+            for he_rm in (he_in, he_out)
+                delete!(g.he2f, he_rm)
+                delete!(g.half_edges, he_rm)
+                delete!(g.next, he_rm)
+                delete!(g.twin, he_rm)
+            end
+            if update
+                delete!(g.v2he, v_loop)
+                g.vs_isolated[v_loop] = f_out
+            end
+            return g
+        end
         he_id = twin(g, he_id)
     end
 
@@ -136,8 +156,12 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
         (out_half_edge(g, src(g, he_id)) == he_id) && (g.v2he[src(g, he_id)] = twin(g, he_prev))
         (out_half_edge(g, src(g, twin_id)) == twin_id) && (g.v2he[src(g, twin_id)] = twin(g, twin_prev))
 
-        g.next[he_prev] = twin_next
-        g.next[twin_prev] = he_next
+        if he_next == he_id # he_id is the inner half edge of a self-loop
+            g.next[twin_prev] = twin_next
+        else
+            g.next[he_prev] = twin_next
+            g.next[twin_prev] = he_next
+        end
 
         if he_next == twin_id
             g.vs_isolated[src(g, he_next)] = face(g, he_next)
@@ -225,6 +249,7 @@ function check_vertices(g::PlanarMultigraph)
 end
 function check_combinatorial_maps(g::PlanarMultigraph)
     for he in half_edges(g)
+        println(he)
         (he == α(g, ϕ(g, σ(g, he)))) || return false
     end
     return true
@@ -356,6 +381,22 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     
     v1 = src(g, he_id)
     v2 = dst(g, he_id)
+    if v1 == v2
+        rem_edge!(g, he_id; update = true)
+        return (v1, v2)
+    end
+    if length(trace_vertex(g, v1)) == 1
+        if length(trace_vertex(g, v2)) > 1
+            (v11, v22) = contract_edge!(g, twin_id)
+            return (v22, v11)
+        else
+            # 2 isolated vertices
+            error("TODO: fix this")
+        end
+    end
+    
+    # update out half edge of v1
+    out_half_edge(g, v1) == he_id && (g.v2he[v1] = twin_next)
     for he in trace_vertex(g, v2)
         v0 = dst(g, he)
         g.half_edges[he] = HalfEdge(v1, v0)
@@ -365,9 +406,6 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     if he_next == twin_id
         g.next[he_prev] = twin_next
         g.f2he[face(g, he_id)] = he_prev
-    elseif he_id == twin_next
-        g.next[twin_prev] = he_next
-        g.f2he[face(g, twin_id)] = twin_prev
     else
         g.next[he_prev] = he_next
         g.next[twin_prev] = twin_next
@@ -383,5 +421,6 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     delete!(g.he2f, he_id)
     delete!(g.he2f, twin_id)
     delete!(g.v2he, v2)
+    # v2 is removed
     return (v1, v2)
 end
