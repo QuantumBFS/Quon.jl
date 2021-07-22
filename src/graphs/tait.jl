@@ -82,7 +82,7 @@ function contract_edge!(q::Tait, he_id::Integer)
     end
     delete!(q.phases, he_id)
     delete!(q.phases, twin_id)
-    delete!(q.locations, v2)
+    (v1 != v2) && delete!(q.locations, v2)
     return q
 end
 
