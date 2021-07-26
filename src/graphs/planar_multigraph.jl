@@ -80,7 +80,14 @@ function trace_orbit(f::Function, a::T; rev::Bool = false) where T
     end
     return perm
 end
-trace_face(g::PlanarMultigraph, f::Integer) = trace_orbit(h -> g.next[h], surrounding_half_edge(g, f))
+function trace_face(g::PlanarMultigraph, f::Integer; safe_trace = false) 
+    !safe_trace && return trace_orbit(h -> g.next[h], surrounding_half_edge(g, f))
+    hes_f = Int[]
+    for (he, f_he) in g.he2f
+        f_he == f && push!(hes_f, he)
+    end
+    return hes_f
+end
 function trace_vertex(g::PlanarMultigraph, v::Integer)
     is_isolated(g, v) && return Int[]
     return trace_orbit(h -> σ_inv(g, h), out_half_edge(g, v); rev = true)
@@ -106,7 +113,35 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
 
     # handle self-loop
     if next(g, twin(g, he_id)) == twin(g, he_id)
+        if next(g, he_id) == he_id  # isolated self-loop
+            v_loop = src(g, he_id)
+            twin_id = twin(g, he_id)
+            he_in = (surrounding_half_edge(g, face(g, he_id)) == he_id) ? he_id : twin_id
+            he_out = twin(g, he_in)
+            f_in = face(g, he_in)
+            f_out = face(g, he_out)
+            for (v_iso, f_iso) in g.vs_isolated
+                f_iso == f_in && (g.vs_isolated[v_iso] = f_out)
+            end
+            hes_f_he = trace_face(g, f_in; safe_trace = true)
+            rem_face!(g, f_in)
+            for he in hes_f_he
+                g.he2f[he] = f_out
+            end
+            for he_rm in (he_in, he_out)
+                delete!(g.he2f, he_rm)
+                delete!(g.half_edges, he_rm)
+                delete!(g.next, he_rm)
+                delete!(g.twin, he_rm)
+            end
+            if update
+                delete!(g.v2he, v_loop)
+                g.vs_isolated[v_loop] = f_out
+            end
+            return g
+        end
         he_id = twin(g, he_id)
+        is_boundary(g, he_id) && (he_id = twin(g, he_id))
     end
 
     twin_id = twin(g, he_id)
@@ -122,7 +157,10 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
 
         # remove a inner face
         if face_he != face_twin 
-            hes_f_he = trace_face(g, face_he)
+            for (v_iso, f_iso) in g.vs_isolated
+                f_iso == face_he && (g.vs_isolated[v_iso] = face_twin)
+            end
+            hes_f_he = trace_face(g, face_he; safe_trace = true)
             rem_face!(g, face_he)
             for he in hes_f_he
                 g.he2f[he] = face_twin
@@ -130,14 +168,32 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
         end
 
         # update f2he
-        (surrounding_half_edge(g, face_twin) == twin_id) && (g.f2he[face_twin] = twin_next)
+        if surrounding_half_edge(g, face_twin) == twin_id
+            if twin_id == twin_next # the case twin is the inner half edge of a self loop
+                g.f2he[face_twin] = he_next
+            else
+                g.f2he[face_twin] = twin_next
+            end
+        end
 
         # update v2he
         (out_half_edge(g, src(g, he_id)) == he_id) && (g.v2he[src(g, he_id)] = twin(g, he_prev))
-        (out_half_edge(g, src(g, twin_id)) == twin_id) && (g.v2he[src(g, twin_id)] = twin(g, twin_prev))
+        if out_half_edge(g, src(g, twin_id)) == twin_id
+            if twin_id == twin_next
+                g.v2he[src(g, twin_id)] = he_next
+            else
+                g.v2he[src(g, twin_id)] = twin(g, twin_prev)
+            end
+        end
 
-        g.next[he_prev] = twin_next
-        g.next[twin_prev] = he_next
+        if he_next == he_id # he_id is the inner half edge of a self-loop
+            g.next[twin_prev] = twin_next
+        elseif twin_next == twin_id
+            g.next[he_prev] = he_next
+        else
+            g.next[he_prev] = twin_next
+            g.next[twin_prev] = he_next
+        end
 
         if he_next == twin_id
             g.vs_isolated[src(g, he_next)] = face(g, he_next)
@@ -356,6 +412,22 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     
     v1 = src(g, he_id)
     v2 = dst(g, he_id)
+    if v1 == v2
+        rem_edge!(g, he_id; update = true)
+        return (v1, v2)
+    end
+    if length(trace_vertex(g, v1)) == 1
+        if length(trace_vertex(g, v2)) > 1
+            (v11, v22) = contract_edge!(g, twin_id)
+            return (v22, v11)
+        else
+            # 2 isolated vertices
+            error("TODO: fix this")
+        end
+    end
+    
+    # update out half edge of v1
+    out_half_edge(g, v1) == he_id && (g.v2he[v1] = twin_next)
     for he in trace_vertex(g, v2)
         v0 = dst(g, he)
         g.half_edges[he] = HalfEdge(v1, v0)
@@ -365,9 +437,6 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     if he_next == twin_id
         g.next[he_prev] = twin_next
         g.f2he[face(g, he_id)] = he_prev
-    elseif he_id == twin_next
-        g.next[twin_prev] = he_next
-        g.f2he[face(g, twin_id)] = twin_prev
     else
         g.next[he_prev] = he_next
         g.next[twin_prev] = twin_next
@@ -383,5 +452,6 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     delete!(g.he2f, he_id)
     delete!(g.he2f, twin_id)
     delete!(g.v2he, v2)
+    # v2 is removed
     return (v1, v2)
 end

@@ -1,5 +1,13 @@
 using Quon, Test
 
+cp = tait_copy()
+contract_boundary_vertices!(cp, [1], [3])
+plot(cp)
+
+rx0 = tait_rx(π*im)
+contract_boundary_vertices!(rx0, [1], [6])
+@test length(faces(rx0)) == 2
+
 rx = tait_rx(π)
 trace_vertex(rx, 1)
 rz = tait_rz(π)
@@ -23,7 +31,7 @@ idr = tensor_product!(tait_id(), rz2)
 c = merge_graph!(tait_copy(), tait_copy())
 contract_boundary_vertices!(c, [2], [9])
 contract_boundary_vertices!(c, [3], [8])
-@test c.g.vs_isolated[4] == 0
+@test length(c.g.vs_isolated) == 1
 
 rx = tait_rx(im)
 plot(rx)

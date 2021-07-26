@@ -234,7 +234,11 @@ function generate_context_faces(q::Tait, normal_pos, ctrl_points, show_faces)
         )
         ct_bezi = compose(context(), ct_bezi, ct_bezi_f)
     end
-    ct_fs = (context(), text(fs_x, fs_y, fs_label, [hcenter], [vcenter]), fill("blue"), font("Helvetica-Bold"))
+    if length(fs_x) > 0
+        ct_fs = (context(), text(fs_x, fs_y, fs_label, [hcenter], [vcenter]), fill("blue"), font("Helvetica-Bold"))
+    else
+        ct_fs = context()
+    end
     return compose(context(),
         show_faces ? ct_fs : context(),
         show_faces ? ct_bezi : context(),

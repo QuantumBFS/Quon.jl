@@ -76,10 +76,13 @@ end
 function contract_edge!(q::Tait, he_id::Integer)
     twin_id = twin(q, he_id)
     (v1, v2) = contract_edge!(q.g, he_id)
-    v2 in q.genuses && push!(q.genuses, v1)
+    if v2 in q.genuses 
+        delete!(q.genuses, v2)
+        push!(q.genuses, v1)
+    end
     delete!(q.phases, he_id)
     delete!(q.phases, twin_id)
-    delete!(q.locations, v2)
+    (v1 != v2) && delete!(q.locations, v2)
     return q
 end
 
@@ -153,76 +156,82 @@ function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
         ib = findfirst(he -> is_boundary(q, he), out_b)
         out_b = [out_b[ib+1:end]; out_b[1:ib]]
         reverse!(out_b)
+
+        tp_a = [prev(q, twin(q, he)) for he in out_a]
+        tp_b = [prev(q, twin(q, he)) for he in out_b]
         dst_a = [dst(q, he) for he in out_a]
         dst_b = [dst(q, he) for he in out_b]
         fs_a = [face(q, he) for he in out_a]
         fs_b = [face(q, he) for he in out_b]
-        vs_rm = [a, b]
-        for v in dst_b
-            if !(v in dst_a)
-                push!(vs_rm, v)
-            end
-        end
-        new_next = Tuple{Int, Int}[]
-        new_vs_isolated = Int[]
 
-        # update half edges
-        # 1. look for half edge of b
-        # 2. replace half edge of b -> a
-        for k in 1:length(out_a)
-            he_a = out_a[k]
-            he_b = out_b[k]
-            if dst_a[k] == dst_b[k] && length(trace_vertex(q, dst_a[k])) == 2
-                push!(new_vs_isolated, dst_a[k])
-                q.g.vs_isolated[dst_a[k]] = fs_a[k]
+        # update surrounding half edge
+        ts_a = [twin(q, he) for he in out_a]
+        ts_b = [twin(q, he) for he in out_b]
+        ts = vcat(ts_a, ts_b)
+        for he in ts
+            f_he = face(q, he)
+            he_f = surrounding_half_edge(q, f_he)
+            while he_f in ts
+                he_f = next(q, he_f)
             end
-            for he_id in trace_vertex(q, dst_b[k])
-                if !(dst(q, he_id) in vs_rm) 
-                    q.g.v2he[dst_a[k]] = he_id
-                end
-                q.g.half_edges[he_id] = HalfEdge(dst_a[k], dst(q, he_id))
-                q.g.half_edges[twin(q, he_id)] = HalfEdge(dst(q, he_id), dst_a[k])
+            q.g.f2he[f_he] = he_f
+        end
+        if dst_a[end] == dst_b[end] # this will create a self-loop
+            # face(out_a[end]) should be 0
+            he0 = surrounding_half_edge(q, 0)
+            while (he0 in ts) || he0 == out_a[end]
+                he0 = next(q, he0)
             end
-            prev_twin_a = prev(q, twin(q, he_a))
-            prev_twin_b = prev(q, twin(q, he_b))
-            src(q, prev_twin_a) != a && push!(new_next, (prev_twin_a, next(q, he_b)))
-            src(q, prev_twin_b) != b && push!(new_next, (prev_twin_b, next(q, he_a)))
+            q.g.f2he[0] = he0
+            q.g.f_max += 1
+            new_f = q.g.f_max
+            q.g.f2he[new_f] = out_a[end]
+            q.g.he2f[out_a[end]] = new_f
         end
-        for (he_c, he_n) in new_next
-            q.g.next[he_c] = he_n
-        end
+
         # update faces
-        # 
-        for k in 1:(length(out_a) - 1)
-            he_a = out_a[k]
-            next_a = next(q, he_a)
-            if dst(q, next_a) == a # a has a multiedge loop
-                he_b = out_b[k + 1]
-                next_b = next(q, he_b)
-                if dst(q, next_b) == b # b has a multiedge loop
-                    delete!(q.g.f2he, face(q, next_a))
-                    continue
-                else
-                    update_face!(q, next_b)
+        for k in 1:(length(out_a)-1)
+            if fs_a[k] != fs_b[k+1]
+                for he in trace_face(q, fs_b[k+1])
+                    q.g.he2f[he] = fs_a[k]
                 end
-            else
-                update_face!(q, next_a)
+                delete!(q.g.f2he, fs_b[k+1])
             end
         end
-        for v in dst_b
-            if !(v in dst_a)
-                delete!(q.g.v2he, v)
-                delete!(q.genuses, v)
-            end
+
+        # connecting 2 planar graphs
+        for k in 1:length(out_a)
+            t_a = ts_a[k]
+            t_b = ts_b[k]
+            q.g.twin[out_a[k]] = out_b[k]
+            q.g.twin[out_b[k]] = out_a[k]
+            q.g.next[tp_a[k]] = out_b[k]
+            q.g.next[tp_b[k]] = out_a[k]
+            q.g.half_edges[out_a[k]] = HalfEdge(dst_b[k], dst_a[k])
+            q.g.half_edges[out_b[k]] = HalfEdge(dst_a[k], dst_b[k])
+            q.g.v2he[dst_a[k]] = out_b[k]
+            q.g.v2he[dst_b[k]] = out_a[k]
+            delete!(q.g.he2f, t_a)
+            delete!(q.g.he2f, t_b)
+            delete!(q.g.next, t_a)
+            delete!(q.g.next, t_b)
+            delete!(q.g.twin, t_a)
+            delete!(q.g.twin, t_b)
+            delete!(q.g.half_edges, t_a)
+            delete!(q.g.half_edges, t_b)
         end
-        for f in fs_b
-            f != 0 && delete!(q.g.f2he, f)
+
+        for v_rm in (a, b)
+            delete!(q.g.v2he, v_rm)
+            deleteat!(q.inputs, findall(isequal(v_rm), q.inputs))
+            deleteat!(q.outputs, findall(isequal(v_rm), q.outputs))
+            delete!(q.genuses, v_rm)
+            delete!(q.locations, v_rm)
         end
-        for v in new_vs_isolated
-            delete!(q.g.v2he, v)
+        
+        for k in 1:length(out_a)
+            contract_edge!(q, out_a[k])
         end
-        rem_vertex!(q, a; update = false)
-        rem_vertex!(q, b; update = false)
     end
     return q
 end
