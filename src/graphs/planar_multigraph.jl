@@ -50,6 +50,7 @@ function prev(g::PlanarMultigraph, he::Integer)
     return current_he
 end
 
+# NOTE: rename ϕ and σ
 ϕ(g::PlanarMultigraph, he::Integer) = g.twin[he]
 twin(g::PlanarMultigraph, he::Integer) = ϕ(g, he)
 
