@@ -6,7 +6,7 @@ mutable struct Phase{T <: Number}
 end
 
 function Base.show(io::IO, p::Phase)
-    print(io, p.isparallel ? "→ " : "↓ ")
+    print(io, p.isparallel ? "∥ " : "⊥ ")
     re = real(p.param)
     ig = imag(p.param)
     if !isapprox(re, 0; atol = quon_atol)
