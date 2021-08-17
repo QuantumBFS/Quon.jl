@@ -1,23 +1,21 @@
-using Quon
 using Documenter
+using Quon
+using DocThemeIndigo
 
-DocMeta.setdocmeta!(Quon, :DocTestSetup, :(using Quon); recursive=true)
+indigo = DocThemeIndigo.install(Quon)
 
 makedocs(;
-    modules=[Quon],
-    authors="Roger-Luo <rogerluo.rl18@gmail.com> and contributors",
-    repo="https://github.com/Roger-luo/Quon.jl/blob/{commit}{path}#{line}",
-    sitename="Quon.jl",
-    format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://Roger-luo.github.io/Quon.jl",
-        assets=String[],
+    modules = [Quon],
+    format = Documenter.HTML(
+        prettyurls = !("local" in ARGS),
+        canonical="https://QuantumBFS.github.io/Quon.jl",
+        assets=String[indigo],
     ),
-    pages=[
+    pages = [
         "Home" => "index.md",
     ],
+    repo = "https://github.com/QuantumBFS/Quon.jl",
+    sitename = "Quon.jl",
 )
 
-deploydocs(;
-    repo="github.com/Roger-luo/Quon.jl",
-)
+deploydocs(; repo = "github.com/QuantumBFS/Quon.jl")
