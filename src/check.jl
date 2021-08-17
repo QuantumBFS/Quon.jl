@@ -52,15 +52,14 @@ end
 function check(tait::Tait{P}, m::Match{:perm_rz, P}) where P
     v = m.vertices[1]
     v in vertices(tait) || return false
-    
 
     is_open(tait, v) && return false
     hes = trace_vertex(tait, v)
-    length(hes) >= 3 || continue
+    length(hes) >= 3 || return false
     ids = findall(hes) do he
         is_genus(tait, dst(tait, he))
     end
-    length(ids) == 0 && continue
+    length(ids) == 0 && return false
     for idx in ids
         he_genus = hes[idx]
         # find half_edge on the other face that has a genus
