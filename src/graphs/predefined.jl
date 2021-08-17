@@ -327,8 +327,8 @@ function tait_hadamard()
     z2 = tait_rz(im*pi/2)
     contract!(z1, x)
     contract!(z1, z2)
-    z1.locations[2] = (0.0, 1.5)
-    z1.locations[4] = (2.0, 1.5)
+    z1.locations[13] = (0.0, 1.5)
+    z1.locations[15] = (2.0, 1.5)
     return z1
 end
 
@@ -468,17 +468,16 @@ function tait_cz()
     c1 = tait_copy()
     c2 = tait_copy()
     contract!(c1, h, [3], [1])
-    c1.locations[23] = (4.0, 2.0)
-    c1.locations[16] = (3.0, 1.0)
-    c1.locations[7] = (1.0, 1.0)
-    c1.locations[2] = (1.0, 3.0)
-    c1.locations[4] = (2.0, 2.0)
-    c1.locations[6] = (0.0, 1.0)
-    c1.locations[5] = (2.0, 0.0)
     contract!(c1, c2, [23], [2])
+    c1.locations[2] = (1.0, 3.0)
+    c1.locations[6] = (0.0, 1.0)
+    c1.locations[29] = (2.0, 0.0)
     c1.locations[24] = (3.0, 0.0)
     c1.locations[26] = (3.0, 3.0)
     c1.locations[28] = (4.0, 1.0)
+    c1.locations[30] = (3.0, 1.0)
+    c1.locations[27] = (2.0, 2.0)
+
     return c1
 end
 
