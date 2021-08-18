@@ -8,9 +8,9 @@ end
 function check(tait::Tait{P}, m::Match{:yang_baxter_star, P}) where P
     v = m.vertices[1]
     v in vertices(tait) || return false
-    is_open(tait, v) && return false
+    is_open_vertex(tait, v) && return false
     hes = trace_vertex(tait, v)
-    if length(hes) == 3 && all(x->!is_open(tait, dst(tait, x)), hes)
+    if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
         return true
     end
     return false
@@ -53,7 +53,7 @@ function check(tait::Tait{P}, m::Match{:perm_rz, P}) where P
     v = m.vertices[1]
     v in vertices(tait) || return false
 
-    is_open(tait, v) && return false
+    is_open_vertex(tait, v) && return false
     hes = trace_vertex(tait, v)
     length(hes) >= 3 || return false
     ids = findall(hes) do he

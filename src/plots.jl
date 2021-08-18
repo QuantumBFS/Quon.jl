@@ -189,7 +189,7 @@ function generate_context_vertices(q, normal_pos, show_tait)
                     context(units = UnitBox(2,2)),
                     is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("royalblue"), linewidth(0.5mm)) : context(),
                     (context(), text(1, 1, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
-                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("royalblue") : fill("white"), 
+                    (context(), circle(1, 1, 1), is_open_vertex(q, vs[i]) ? fill("royalblue") : fill("white"), 
                         (is_genus(q, vs[i]) && !show_tait) ? stroke("black") : stroke("royalblue"), linewidth(1)
                     )
                 )
@@ -201,7 +201,7 @@ function generate_context_vertices(q, normal_pos, show_tait)
                     context(units = UnitBox(2,2)),
                     is_genus(q, vs[i]) ? (context(), arc([1], [0.8, 1.6], [0.8, 0.4], [0.5, pi+0.5], [pi-0.5, -0.5], [false]), fill("transparent"), stroke("royalblue"), linewidth(0.5mm)) : context(),
                     (context(), text(1, 1, vs_label[i], hcenter, is_genus(q, vs[i]) ? vbottom : vcenter), fill("red"), font("Helvetica-Bold")),
-                    (context(), circle(1, 1, 1), is_open(q, vs[i]) ? fill("royalblue") : fill("white"), 
+                    (context(), circle(1, 1, 1), is_open_vertex(q, vs[i]) ? fill("royalblue") : fill("white"), 
                         (is_genus(q, vs[i]) && !show_tait) ? stroke("white") : stroke("royalblue"), linewidth(0.5)
                     )
                 )
@@ -255,15 +255,15 @@ function generate_string(q::Tait, hes_x, hes_y, hes_rot, radius)
         he_next = next(q, he_curr)
         ct_radius = 3radius
         while true
-            if !(is_open(q, dst(q, he_curr)) && is_open(q, src(q, he_next)))
-                if is_open(q, src(q, he_curr))
+            if !(is_open_vertex(q, dst(q, he_curr)) && is_open_vertex(q, src(q, he_next)))
+                if is_open_vertex(q, src(q, he_curr))
                     pos_curr = (hes_x[he_curr] + radius*cos(hes_rot[he_curr]-π/2), hes_y[he_curr] + radius*sin(hes_rot[he_curr]-π/2))
                     ctrl_curr = (pos_curr[1] + ct_radius*cos(hes_rot[he_curr]), pos_curr[2] + ct_radius*sin(hes_rot[he_curr]))
                 else
                     pos_curr = (hes_x[he_curr], hes_y[he_curr])
                     ctrl_curr = (pos_curr[1] + ct_radius*cos(hes_rot[he_curr] - π/4), pos_curr[2] + ct_radius*sin(hes_rot[he_curr] - π/4))
                 end
-                if is_open(q, dst(q, he_next))
+                if is_open_vertex(q, dst(q, he_next))
                     pos_next = (hes_x[he_next] + radius*cos(hes_rot[he_next]-π/2), hes_y[he_next] + radius*sin(hes_rot[he_next]-π/2))
                     ctrl_next = (pos_next[1] + ct_radius*cos(hes_rot[he_next]-π), pos_next[2] + ct_radius*sin(hes_rot[he_next]-π))
                 else
@@ -288,7 +288,7 @@ function generate_string(q::Tait, hes_x, hes_y, hes_rot, radius)
     hes = Set(half_edges(q))
     while !isempty(hes)
         he = pop!(hes)
-        if !is_open(q, src(q, he)) && !is_open(q, dst(q, he))
+        if !is_open_vertex(q, src(q, he)) && !is_open_vertex(q, dst(q, he))
             θ = hes_rot[he]
             crx = generate_phase(hes_x[he], hes_y[he], θ, phase(q, he))
             ct_phase = compose(context(), ct_phase, crx)

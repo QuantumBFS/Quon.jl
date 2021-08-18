@@ -135,7 +135,13 @@ function change_direction!(q::Tait, e_id::Integer)
     q.phases[twin(q, e_id)] = p
     return q
 end
-is_open(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
+
+"""
+    is_open_vertex(q::Tait, v)
+
+Returns `true` if `v` represent a special vertex for open edges.
+"""
+is_open_vertex(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
     v_max_A = A.g.v_max

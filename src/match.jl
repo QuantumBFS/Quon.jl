@@ -35,10 +35,10 @@ function match!(matches, ::Rule{:string_genus}, tait::Tait)
 end
 
 function match!(matches, ::Rule{:yang_baxter_star}, tait::Tait)
-    for (v, _) in tait.g.v2he
-        is_open(tait, v) && continue
+    for v in vertices(tait)
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
-        if length(hes) == 3 && all(x->!is_open(tait, dst(tait, x)), hes)
+        if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
             push!(matches, Match{:yang_baxter_star}(tait, [v], hes))
         end
     end
@@ -57,11 +57,12 @@ function match!(matches, ::Rule{:yang_baxter_triangle}, tait::Tait)
 end
 
 function match!(matches, ::Rule{:charge_rm_v}, tait::Tait)
-    for (v, _) in tait.g.v2he
-        is_open(tait, v) && continue
+    for v in vertices(tait)
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
         ismatch = true
         for he in hes
+            # TODO: should rework the arithmetic of Phase
             haskey(tait.phases, he) || (ismatch = false; break)
             p = phase(tait, he)
             if !p.isparallel
@@ -128,7 +129,7 @@ end
 # TODO: can we just match 3 genuses?
 function match!(matches, ::Rule{:perm_rz}, tait::Tait)
     for v in vertices(tait)
-        is_open(tait, v) && continue
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
         length(hes) >= 3 || continue
         ids = findall(hes) do he
@@ -264,7 +265,7 @@ end
 
 function is_genus_connected_to_open_edge(tait::Tait, genus)
     for he in trace_vertex(tait, genus)
-        if is_open(tait, dst(tait, he))
+        if is_open_vertex(tait, dst(tait, he))
             return true
         end
     end
@@ -273,7 +274,7 @@ end
 
 function has_open_half_edge(tait::Tait, hes)
     all(hes) do he
-        !is_open(tait, dst(tait, he)) && !is_open(tait, src(tait, he))
+        !is_open_vertex(tait, dst(tait, he)) && !is_open_vertex(tait, src(tait, he))
     end
 end
 
