@@ -70,7 +70,13 @@ function match!(matches, ::Rule{:charge_rm_v}, tait::Tait)
             continue
         end
         
-        i1 = findfirst(x->(!is_open_half_edge(tait, x)&&is_phase_pi(phase(tait, x))&&is_parallel(phase(tait, x))), hes)
+        i1 = findfirst(hes) do x
+            if is_open_half_edge(tait, x)
+                return true
+            else 
+                return !is_phase_pi(phase(tait, x)) || !is_parallel(phase(tait, x))
+            end
+        end
         if i1 === nothing
             push!(matches, Match{:charge_rm_v}(tait, [v], hes))
             continue
@@ -107,8 +113,15 @@ function match!(matches, ::Rule{:charge_rm_f}, tait::Tait)
         f == 0 && continue
         hes = trace_face(tait, f)
         
-        i1 = findfirst(x->(is_open_half_edge(tait, x)&&is_phase_pi(phase(tait, x))&&is_parallel(phase(tait, x))), hes)
+        i1 = findfirst(hes) do x
+            if is_open_half_edge(tait, x)
+                return true
+            else 
+                return !is_phase_pi(phase(tait, x)) || !is_parallel(phase(tait, x))
+            end
+        end
         if i1 === nothing
+            println(f)
             (length(hes) > 1) && push!(matches, Match{:charge_rm_f}(tait, [], hes))
             continue
         end
@@ -162,7 +175,6 @@ function match!(matches, ::Rule{:x_fusion}, tait::Tait)
     return matches
 end
 
-# TODO: can we just match 3 genuses?
 function match!(matches, ::Rule{:perm_rz}, tait::Tait)
     for v in vertices(tait)
         is_open_vertex(tait, v) && continue

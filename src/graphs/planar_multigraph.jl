@@ -169,17 +169,25 @@ function rem_edge!(g::PlanarMultigraph, he_id::Integer; update::Bool = true)
         end
 
         # update f2he
-        if surrounding_half_edge(g, face_twin) == twin_id
-            if twin_id == twin_next # the case twin is the inner half edge of a self loop
-                g.f2he[face_twin] = he_next
-            else
-                g.f2he[face_twin] = twin_next
-            end
+        if surrounding_half_edge(g, face_twin) in (he_id, twin_id)
+            # if twin_id == twin_next # the case twin is the inner half edge of a self loop
+            #     g.f2he[face_twin] = he_next
+            # else
+                new_he = nothing
+                for nhe in (he_next, he_prev, twin_next, twin_prev)
+                    if !(nhe in (he_id, twin_id)) 
+                        g.f2he[face_twin] = nhe
+                        new_he = nhe
+                        break
+                    end
+                end
+                new_he === nothing && error("surrounding half edge not founded")
+            # end
         end
 
         # update v2he
         (out_half_edge(g, src(g, he_id)) == he_id) && (g.v2he[src(g, he_id)] = twin(g, he_prev))
-        if out_half_edge(g, src(g, twin_id)) == twin_id
+        if out_half_edge(g, src(g, twin_id)) in (he_id, twin_id)
             if twin_id == twin_next
                 g.v2he[src(g, twin_id)] = he_next
             else
