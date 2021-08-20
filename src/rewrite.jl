@@ -46,8 +46,9 @@ function rewrite!(tait::Tait, m::Match{:charge_rm_v})
         for he in hes
             tait.phases[he] = p0
             tait.phases[twin(tait, he)] = p0
-            rewrite!(tait, Match{:identity})(tait, [], [he])
+            rewrite!(tait, Match{:identity}(tait, [], [he]))
         end
+        return tait
     end
 
     hes_identity = Int[]

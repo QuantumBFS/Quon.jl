@@ -48,6 +48,18 @@ end
     plot(rz2)
 end
 
+@testset "charge remove" begin
+    rx2 = contract!(tait_rx(pi*im), tait_rx(pi*im))
+    m_charge_rm_v = match(Rule(:charge_rm_v), rx2)
+    rewrite!(rx2, m_charge_rm_v[1])
+    @test nv(rx2) == 5
+
+    rz2 = contract!(tait_rz(pi*im), tait_rz(pi*im))
+    m_charge_rm_f = match(Rule(:charge_rm_f), rz2)
+    rewrite!(rz2, m_charge_rm_f[1])
+    @test nv(rz2) == 5
+end
+
 # TODO: fix locations for cz
 # @testset "CZ^2 = I" begin
 #     cz = tait_cz()
