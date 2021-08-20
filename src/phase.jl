@@ -102,24 +102,30 @@ end
 
 is_parallel(p::Phase) = p.isparallel
 
-is_phase_pi(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param)+pi, 2pi, RoundNearest) ≈ 0)
-is_phase_zero(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param), 2pi, RoundNearest) ≈ 0)
-is_phase_half_pi(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param), 2pi, RoundNearest) ≈ π/2)
-is_phase_minus_half_pi(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param), 2pi, RoundNearest) ≈ π/2)
+is_phase_pi(p::Phase; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+    isapprox(rem(imag(p.param)+pi, 2pi, RoundNearest), 0, atol = atol))
+is_phase_zero(p::Phase; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+    isapprox(rem(imag(p.param), 2pi, RoundNearest), 0, atol = atol))
+is_phase_half_pi(p::Phase; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+    isapprox(rem(imag(p.param), 2pi, RoundNearest), π/2, atol = atol))
+is_phase_minus_half_pi(p::Phase; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+    isapprox(rem(imag(p.param), 2pi, RoundNearest), -π/2, atol = atol))
 
 """
-    is_phase_para_half_pi(p)
+    is_phase_para_half_pi(p; atol = atol)
 
-Returns `true` if `p` is `π/2 (∥)` or `-π/2 (⊥)`.
+Returns `true` if `p` ≈ `π/2 (∥)` or `-π/2 (⊥)`.
 """
-is_phase_para_half_pi(p::Phase) = (p.isparallel && is_phase_half_pi(p)) || (!p.isparallel && is_phase_minus_half_pi(p))
+is_phase_para_half_pi(p::Phase; atol = quon_atol) = (p.isparallel && is_phase_half_pi(p; atol = atol)) || 
+    (!p.isparallel && is_phase_minus_half_pi(p; atol = atol))
 
 """
-    is_phase_perp_half_pi(p)
+    is_phase_perp_half_pi(p; atol = atol)
 
-Returns `true` if `p` is `π/2 (⊥)` or `-π/2 (∥)`.
+Returns `true` if `p` ≈ `π/2 (⊥)` or `-π/2 (∥)`.
 """
-is_phase_perp_half_pi(p::Phase) = (!p.isparallel && is_phase_half_pi(p)) || (p.isparallel && is_phase_minus_half_pi(p))
+is_phase_perp_half_pi(p::Phase; atol = quon_atol) = (!p.isparallel && is_phase_half_pi(p; atol = atol)) || 
+    (p.isparallel && is_phase_minus_half_pi(p; atol = atol))
 
 function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
     # triangle => star

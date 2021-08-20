@@ -143,6 +143,13 @@ Returns `true` if `v` represent a special vertex for open edges.
 """
 is_open_vertex(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
+"""
+    is_open_half_edge(q::Tait, he)
+
+Returns `true` if `he` is an open half edge.
+"""
+is_open_half_edge(q::Tait, he::Integer) = !haskey(q.phases, he)
+
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
     v_max_A = A.g.v_max
     merge_graph!(A, B; delta = 3.0)
