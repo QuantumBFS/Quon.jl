@@ -299,16 +299,16 @@ function generate_string(q::Tait, hes_x, hes_y, hes_rot, radius)
 end
 
 function generate_phase(x, y, θ, p)
-    if (isapprox(p.param, π/2*im; atol = quon_atol) && !p.isparallel) ||
-        (isapprox(p.param, -π/2*im; atol = quon_atol) && p.isparallel)
+    if (isapprox(p.param, π/2*im; atol = quon_atol) && !is_parallel(p)) ||
+        (isapprox(p.param, -π/2*im; atol = quon_atol) && is_parallel(p))
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
                 (context(), line([(cos(θ+π/4), sin(θ+π/4)), (cos(θ+5π/4), sin(θ+5π/4))]), stroke("black"), linewidth(1)),
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))),
         )
-    elseif (isapprox(p.param, -π/2*im; atol = quon_atol) && !p.isparallel) ||
-        (isapprox(p.param, π/2*im; atol = quon_atol) && p.isparallel)
+    elseif (isapprox(p.param, -π/2*im; atol = quon_atol) && !is_parallel(p)) ||
+        (isapprox(p.param, π/2*im; atol = quon_atol) && is_parallel(p))
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
@@ -316,7 +316,7 @@ function generate_phase(x, y, θ, p)
                 (context(), circle(0, 0, 1), fill("white"), stroke("black"))),
         )
     elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
-        isapprox(rem(imag(p.param), 2π, RoundDown), π; atol = quon_atol) && p.isparallel)
+        isapprox(rem(imag(p.param), 2π, RoundDown), π; atol = quon_atol) && is_parallel(p))
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
@@ -328,7 +328,7 @@ function generate_phase(x, y, θ, p)
             ),
         )
     elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
-            isapprox(rem(imag(p.param), 2π, RoundDown), π; atol = quon_atol) && !p.isparallel)
+            isapprox(rem(imag(p.param), 2π, RoundDown), π; atol = quon_atol) && !is_parallel(p))
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
@@ -340,7 +340,7 @@ function generate_phase(x, y, θ, p)
             ),
         )
     elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
-        isapprox(rem(imag(p.param), 2π, RoundDown), 0; atol = quon_atol) && p.isparallel)
+        isapprox(rem(imag(p.param), 2π, RoundDown), 0; atol = quon_atol) && is_parallel(p))
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),
@@ -350,7 +350,7 @@ function generate_phase(x, y, θ, p)
             ),
         )
     elseif (isapprox(real(p.param), 0; atol = quon_atol) && 
-            isapprox(rem(imag(p.param), 2π, RoundDown), 0; atol = quon_atol) && !p.isparallel)
+            isapprox(rem(imag(p.param), 2π, RoundDown), 0; atol = quon_atol) && !is_parallel(p))
         return compose(
             context(x-0.1, y-0.1, 0.2, 0.2),
             (context(units=UnitBox(-1, -1, 2, 2)),

@@ -107,7 +107,7 @@ function rewrite!(tait::Tait, m::Match{:identity})
     he = m.half_edges[1]
     p = phase(tait, he)
     isapprox(0, p.param; atol = quon_atol) || (p = change_direction(p))
-    if p.isparallel
+    if is_parallel(p)
         contract_edge!(tait, he)
     else
         rem_edge!(tait, he; update = true)

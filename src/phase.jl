@@ -99,7 +99,27 @@ function update_yang_baxter_star(p1, p2, p3)
     end
     return q1, q2, q3
 end
+
+is_parallel(p::Phase) = p.isparallel
+
 is_phase_pi(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param)+pi, 2pi, RoundNearest) ≈ 0)
+is_phase_zero(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param), 2pi, RoundNearest) ≈ 0)
+is_phase_half_pi(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param), 2pi, RoundNearest) ≈ π/2)
+is_phase_minus_half_pi(p::Phase) = (real(p.param) ≈ 0 && rem(imag(p.param), 2pi, RoundNearest) ≈ π/2)
+
+"""
+    is_phase_para_half_pi(p)
+
+Returns `true` if `p` is `π/2 (∥)` or `-π/2 (⊥)`.
+"""
+is_phase_para_half_pi(p::Phase) = (p.isparallel && is_phase_half_pi(p)) || (!p.isparallel && is_phase_minus_half_pi(p))
+
+"""
+    is_phase_perp_half_pi(p)
+
+Returns `true` if `p` is `π/2 (⊥)` or `-π/2 (∥)`.
+"""
+is_phase_perp_half_pi(p::Phase) = (!p.isparallel && is_phase_half_pi(p)) || (p.isparallel && is_phase_minus_half_pi(p))
 
 function yang_baxter_param(p1::Phase, p2::Phase, p3::Phase)
     # triangle => star

@@ -65,7 +65,7 @@ function match!(matches, ::Rule{:charge_rm_v}, tait::Tait)
             # TODO: should rework the arithmetic of Phase
             haskey(tait.phases, he) || (ismatch = false; break)
             p = phase(tait, he)
-            if !p.isparallel
+            if !is_parallel(p)
                 if !is_singular_change_direction(p)
                     change_direction!(tait, he)
                 else
@@ -89,7 +89,7 @@ function match!(matches, ::Rule{:charge_rm_f}, tait::Tait)
         for he in hes
             haskey(tait.phases, he) || (ismatch = false; break)
             p = phase(tait, he)
-            if p.isparallel
+            if is_parallel(p)
                 if !is_singular_change_direction(p)
                     change_direction!(tait, he)
                 else
