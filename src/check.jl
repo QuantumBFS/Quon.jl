@@ -124,4 +124,16 @@ function check(tait::Tait{P}, m::Match{:genus_fusion, P}) where P
 end
 
 function check(tait::Tait{P}, m::Match{:swap_genus, P}) where P
+    vs = m.vertices
+    hes = m.half_edges
+    all(has_vertex(tait, v) for v in vs) || return false
+    all(has_half_edge(tait, he) for he in hes) || return false
+    all(is_genus(tait, g) for g in vs[1:4]) || return false
+    all(!is_genus(tait, v) for v in vs[5:9]) || return false
+    v0 = vs[9]
+    all(src(tait, he) == v0 for he in hes) || return false
+    all(length(trace_face(tait, he)) == 4 for he in hes) || return false
+    all(check_swap_parameters(tait, v) for v in vs[5:9]) || return false
+    g1 = vs[1]
+    return !is_genus_connected_to_open_edge(tait, g1)
 end

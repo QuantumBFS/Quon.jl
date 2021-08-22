@@ -143,3 +143,9 @@ function rewrite!(tait::Tait{P}, m::Match{:genus_fusion}) where {P <: Phase}
     new_he1, _ = add_edge!(tait, g1, g2, f, Phase(0.0im, true))
     rewrite!(tait, Match{:identity}(tait, [], [new_he1]))
 end
+
+function rewrite!(tait::Tait, m::Match{:swap_genus})
+    g = m.vertices[1]
+    delete!(tait.genuses, g)
+    return tait
+end

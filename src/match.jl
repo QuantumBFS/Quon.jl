@@ -241,8 +241,10 @@ end
 
 function match!(matches, ::Rule{:swap_genus}, tait::Tait)
     for v0 in vertices(tait)
+        is_genus(tait, v0) && continue
         hes = trace_vertex(tait, v)
         length(hes) == 4 || continue
+        vs = [dst(tait, he) for he in hes]
 
         faces_contain_4_edges = true
         for he in hes
@@ -256,10 +258,10 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
         faces_contain_4_edges || continue
 
         vertices_contain_4_neighbors = true
-        for he in hes
+        for v in vs
             v = dst(tait, he)
             v_hes = trace_vertex(tait, v)
-            if length(v_hes) != 4
+            if is_genus(tait, v) || length(v_hes) != 4
                 vertices_contain_4_neighbors = false
                 break
             end
@@ -292,23 +294,30 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
         idx = findfirst(x->!is_genus_connected_to_open_edge(tait, x), connected_genuses)
         idx === nothing || continue
 
-        push!(matches, Match{:swap_genus}(tait, [connected_genuses[idx]], []))        
+        push!(matches, 
+            Match{:swap_genus}(tait, 
+                [connected_genuses[idx:end]; connected_genuses[1:idx-1]; 
+                    vs[idx:end]; vs[1:idx-1]; v0
+                ], 
+                [hes[idx:end]; hes[1:idx-1]]
+            )
+        )        
     end
     return matches
 end
 
 function check_swap_parameters(tait::Tait, v)
     hes = trace_vertex(tait, v)
-    ps = [phase(tait, he) for he in hes]
-    for i = 1:length(ps)
-        is_parallel = (i % 2 == 0)
-        if ps[i].isparallel != is_parallel
-            ps[i] = change_direction(ps[i])
-        end
+    length(hes) == 4 || return false
+    any(has_open_half_edge(tait, he) for he in hes) && return false
+    (p1, p2, p3, p4) = [phase(tait, he) for he in hes]
+    if is_phase_para_half_pi(p1) && is_phase_para_half_pi(p2) && 
+        is_phase_perp_half_pi(p2) && is_phase_perp_half_pi(p4) 
+        return true
+    elseif is_phase_para_half_pi(p2) && is_phase_para_half_pi(p4) && 
+        is_phase_perp_half_pi(p1) && is_phase_perp_half_pi(p3) 
+        return true
     end
-    all(p -> isapprox(real(p.param), 0; atol = quon_atol), ps) || return false
-    all(p -> isapprox(rem2pi(imag(p.param), RoundDown), π/2; atol = quon_atol), ps) && return true
-    all(p -> isapprox(rem2pi(imag(p.param), RoundDown), 3π/2; atol = quon_atol), ps) && return true
     return false
 end
 
