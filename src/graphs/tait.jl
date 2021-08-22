@@ -40,6 +40,9 @@ rem_face!(q::Tait, id) = rem_face!(q.g, id)
 update_face!(q::Tait, id) = update_face!(q.g, id)
 is_isolated(q::Tait, id) = is_isolated(q.g, id)
 add_vertex!(q::Tait, id) = add_vertex!(q.g, id)
+has_vertex(q::Tait, id) = has_vertex(q.g, id)
+has_half_edge(q::Tait, id) = has_half_edge(q.g, id)
+has_face(q::Tait, id) = has_face(q.g, id)
 
 function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where P
     (new_he1, new_he2) = add_edge!(q.g, v1, v2, f)

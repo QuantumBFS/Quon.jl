@@ -461,3 +461,7 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     # v2 is removed
     return (v1, v2)
 end
+
+has_vertex(g::PlanarMultigraph, v) = haskey(g.v2he, v) || haskey(g.vs_isolated, v)
+has_half_edge(g::PlanarMultigraph, he) = haskey(g.half_edges, he)
+has_face(g::PlanarMultigraph, f) = haskey(g.f2he, f)
