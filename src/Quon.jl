@@ -27,7 +27,7 @@ export Rule, rewrite!, match!
 
 include("match.jl")
 include("rewrite.jl")
-# include("check.jl")
+include("check.jl")
 
 export plot
 

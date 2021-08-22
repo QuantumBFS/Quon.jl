@@ -170,7 +170,7 @@ function match!(matches, ::Rule{:x_fusion}, tait::Tait)
         hes = trace_vertex(tait, v)
         length(hes) == 2 || continue
         all(he -> !is_open_half_edge(tait, he), hes) || continue
-        push!(matches, Match{:x_fusion}(tait, [], hes))
+        push!(matches, Match{:x_fusion}(tait, [v], hes))
     end
     return matches
 end
