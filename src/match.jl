@@ -242,12 +242,12 @@ end
 function match!(matches, ::Rule{:swap_genus}, tait::Tait)
     for v0 in vertices(tait)
         is_genus(tait, v0) && continue
-        hes = trace_vertex(tait, v)
-        length(hes) == 4 || continue
-        vs = [dst(tait, he) for he in hes]
+        hes_v0 = trace_vertex(tait, v0)
+        length(hes_v0) == 4 || continue
+        vs = [dst(tait, he) for he in hes_v0]
 
         faces_contain_4_edges = true
-        for he in hes
+        for he in hes_v0
             f = face(tait, he)
             f_hes = trace_face(tait, f)
             if length(f_hes) != 4
@@ -259,7 +259,6 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
 
         vertices_contain_4_neighbors = true
         for v in vs
-            v = dst(tait, he)
             v_hes = trace_vertex(tait, v)
             if is_genus(tait, v) || length(v_hes) != 4
                 vertices_contain_4_neighbors = false
@@ -270,14 +269,14 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
 
         # check parameters
         check_swap_parameters(tait, v0) || continue
-        for he in hes
+        for he in hes_v0
             v = dst(tait, he)
             check_swap_parameters(tait, v) || continue
         end
 
         has_4_connected_genuses = true
         connected_genuses = Int[]
-        for he in hes
+        for he in hes_v0
             he_twin = twin(tait, he)
             he_g = σ_inv(tait, σ_inv(tait, he_twin))
             v_g = dst(tait, he_g)
@@ -292,14 +291,14 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
 
         # find genus has open edge
         idx = findfirst(x->!is_genus_connected_to_open_edge(tait, x), connected_genuses)
-        idx === nothing || continue
+        idx === nothing && continue
 
         push!(matches, 
             Match{:swap_genus}(tait, 
                 [connected_genuses[idx:end]; connected_genuses[1:idx-1]; 
                     vs[idx:end]; vs[1:idx-1]; v0
                 ], 
-                [hes[idx:end]; hes[1:idx-1]]
+                [hes_v0[idx:end]; hes_v0[1:idx-1]]
             )
         )        
     end
@@ -309,9 +308,9 @@ end
 function check_swap_parameters(tait::Tait, v)
     hes = trace_vertex(tait, v)
     length(hes) == 4 || return false
-    any(has_open_half_edge(tait, he) for he in hes) && return false
+    any(is_open_half_edge(tait, he) for he in hes) && return false
     (p1, p2, p3, p4) = [phase(tait, he) for he in hes]
-    if is_phase_para_half_pi(p1) && is_phase_para_half_pi(p2) && 
+    if is_phase_para_half_pi(p1) && is_phase_para_half_pi(p3) && 
         is_phase_perp_half_pi(p2) && is_phase_perp_half_pi(p4) 
         return true
     elseif is_phase_para_half_pi(p2) && is_phase_para_half_pi(p4) && 

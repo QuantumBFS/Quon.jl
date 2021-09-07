@@ -2,7 +2,7 @@ using Test
 using Quon
 using Quon: check
 
-@testset "string genus" begin
+@testset "string-genus Rule" begin
     c = contract!(tait_copy(), tait_copy(), [2, 3], [1, 3])
     m = Quon.match(Quon.Rule{:string_genus}(), c)
     @test length(m) == 1
@@ -66,6 +66,14 @@ end
     @test check(rz2, m_charge_rm_f[1])
     rewrite!(rz2, m_charge_rm_f[1])
     @test nv(rz2) == 5
+end
+
+@testset "SWAP-genus Rule" begin
+    s2 = contract!(tait_swap(), tait_swap())
+    m_swap_genus = match(Rule(:swap_genus), s2)
+    @test check(s2, m_swap_genus[1])
+    rewrite!(s2, m_swap_genus[1])
+    @test !check(s2, m_swap_genus[1])
 end
 
 # TODO: fix locations for cz

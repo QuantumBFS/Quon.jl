@@ -154,6 +154,7 @@ Returns `true` if `he` is an open half edge.
 is_open_half_edge(q::Tait, he::Integer) = !haskey(q.phases, he)
 
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
+    length(va) == length(vb) || error("Size of the input Tait graph and the output Tait graph mismatch")
     v_max_A = A.g.v_max
     merge_graph!(A, B; delta = 3.0)
     vb = vb .+ v_max_A

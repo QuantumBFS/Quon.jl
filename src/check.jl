@@ -132,7 +132,7 @@ function check(tait::Tait{P}, m::Match{:swap_genus, P}) where P
     all(!is_genus(tait, v) for v in vs[5:9]) || return false
     v0 = vs[9]
     all(src(tait, he) == v0 for he in hes) || return false
-    all(length(trace_face(tait, he)) == 4 for he in hes) || return false
+    all(length(trace_face(tait, face(tait, he))) == 4 for he in hes) || return false
     all(check_swap_parameters(tait, v) for v in vs[5:9]) || return false
     g1 = vs[1]
     return !is_genus_connected_to_open_edge(tait, g1)

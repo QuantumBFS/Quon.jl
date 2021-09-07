@@ -14,8 +14,8 @@ export PlanarMultigraph, Tait,
 export contract!, contract_boundary_vertices!, 
     tensor_product!, merge_boundary_vertices!,
     phases, phases, genuses, is_genus, is_open_vertex
-export planar_rx, planar_rz, planar_id, planar_copy, planar_zero_state, tait_rx, tait_rz, tait_id,
-    tait_hadamard, tait_copy, tait_cz, tait_zero_state
+export planar_rx, planar_rz, planar_id, planar_copy, planar_zero_state, planar_swap,
+    tait_rx, tait_rz, tait_id, tait_hadamard, tait_copy, tait_cz, tait_zero_state, tait_swap
 
 include("utils/yang_baxter.jl")
 include("phase.jl")
