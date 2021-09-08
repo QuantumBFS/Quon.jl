@@ -1,14 +1,19 @@
-check(tait::Tait{P}, m::Match{R, P}) where {R, P} = false
+function has_subgraph(tait::Tait, m::Match)
+    all(has_vertex(tait, v) for v in m.vertices) || return false
+    all(has_half_edge(tait, he) for he in m.half_edges) || return false
+    return true
+end
 
-function check(tait::Tait{P}, m::Match{:string_genus, P}) where P
+check(tait::Tait{P}, m::Match{R}) where {P, R} = false
+
+function check(tait::Tait{P}, m::Match{:string_genus}) where P
     v = m.vertices[1]
     return v in tait.genuses
 end
 
-function check(tait::Tait{P}, m::Match{:yang_baxter_star, P}) where P
+function check(tait::Tait{P}, m::Match{:yang_baxter_star}) where P
+    has_subgraph(tait, m) || return false
     v = m.vertices[1]
-    has_vertex(tait, v) || return false
-    all(has_half_edge(tait, he) for he in m.half_edges) || return false
 
     is_open_vertex(tait, v) && return false
     hes = trace_vertex(tait, v)
@@ -18,9 +23,9 @@ function check(tait::Tait{P}, m::Match{:yang_baxter_star, P}) where P
     return false
 end
 
-function check(tait::Tait{P}, m::Match{:yang_baxter_triangle, P}) where P
+function check(tait::Tait{P}, m::Match{:yang_baxter_triangle}) where P
+    has_subgraph(tait, m) || return false
     hes = m.half_edges
-    all(has_half_edge(tait, he) for he in hes) || return false
 
     length(hes) == 3 || return false
     any(is_open_half_edge(tait, he) for he in hes) && return false
@@ -31,11 +36,10 @@ function check(tait::Tait{P}, m::Match{:yang_baxter_triangle, P}) where P
     return length(trace_face(tait, f)) == 3
 end
 
-function check(tait::Tait{P}, m::Match{:charge_rm_v, P}) where P 
+function check(tait::Tait{P}, m::Match{:charge_rm_v}) where P 
+    has_subgraph(tait, m) || return false
     hes = m.half_edges
     v = m.vertices[1]
-    has_vertex(tait, v) || return false
-    all(has_half_edge(tait, he) for he in hes) || return false
 
     is_open_vertex(tait, v) && return false
     src(tait, hes[1]) == v || return false
@@ -49,9 +53,9 @@ function check(tait::Tait{P}, m::Match{:charge_rm_v, P}) where P
     return is_phase_pi(p1) && is_parallel(p1)
 end
 
-function check(tait::Tait{P}, m::Match{:charge_rm_f, P}) where P
+function check(tait::Tait{P}, m::Match{:charge_rm_f}) where P
+    has_subgraph(tait, m) || return false
     hes = m.half_edges
-    all(has_half_edge(tait, he) for he in hes) || return false
     
     face(tait, hes[1]) != 0 || return false
     any(is_open_half_edge(tait, he) for he in hes) && return false
@@ -64,9 +68,9 @@ function check(tait::Tait{P}, m::Match{:charge_rm_f, P}) where P
     return is_phase_pi(p_end) && !is_parallel(p_end)
 end
 
-function check(tait::Tait{P}, m::Match{:z_fusion, P}) where P
+function check(tait::Tait{P}, m::Match{:z_fusion}) where P
+    has_subgraph(tait, m) || return false
     hes = m.half_edges
-    all(has_half_edge(tait, he) for he in hes) || return false
 
     length(hes) == 2 || return false
     any(is_open_half_edge(tait, he) for he in hes) && return false
@@ -75,11 +79,10 @@ function check(tait::Tait{P}, m::Match{:z_fusion, P}) where P
     return face(tait, hes[1]) != 0
 end
 
-function check(tait::Tait{P}, m::Match{:x_fusion, P}) where P
+function check(tait::Tait{P}, m::Match{:x_fusion}) where P
+    has_subgraph(tait, m) || return false
     v = m.vertices[1]
     hes = m.half_edges
-    has_vertex(tait, v) || return false
-    all(has_half_edge(tait, he) for he in hes) || return false
     
     is_genus(tait, v) && return false
     length(hes) == 2 || return false
@@ -89,11 +92,10 @@ function check(tait::Tait{P}, m::Match{:x_fusion, P}) where P
     return σ_inv(tait, hes[2]) == hes[1]
 end
 
-function check(tait::Tait{P}, m::Match{:perm_rz, P}) where P
+function check(tait::Tait{P}, m::Match{:perm_rz}) where P
+    has_subgraph(tait, m) || return false
     (v, g2) = m.vertices
     he1, he2 = m.half_edges
-    (has_vertex(tait, v) && has_vertex(tait, g2)) || return false
-    (has_half_edge(tait, he1) && has_half_edge(tait, he2)) || return false
 
     g1 = dst(tait, he1)
     is_open_half_edge(tait, he1) && return false
@@ -105,17 +107,16 @@ function check(tait::Tait{P}, m::Match{:perm_rz, P}) where P
     return face(tait, he2) in fs_v
 end
 
-function check(tait::Tait{P}, m::Match{:identity, P}) where P
+function check(tait::Tait{P}, m::Match{:identity}) where P
+    has_subgraph(tait, m) || return false
     he = m.half_edges[1]
-    has_half_edge(tait, he) || return false
     return is_phase_zero(phase(tait, he))
 end
 
-function check(tait::Tait{P}, m::Match{:genus_fusion, P}) where P
+function check(tait::Tait{P}, m::Match{:genus_fusion}) where P
+    has_subgraph(tait, m) || return false
     g1, g2 = m.vertices
     he1, he2 = m.half_edges
-    (has_vertex(tait, g1) && has_vertex(tait, g2)) || return false
-    (has_half_edge(tait, he1) && has_half_edge(tait, he2)) || return false
 
     (is_genus(tait, g1) && is_genus(tait, g2)) || return false
     (src(tait, he1) == g1 && src(tait, he2) == g2) || return false
@@ -123,11 +124,11 @@ function check(tait::Tait{P}, m::Match{:genus_fusion, P}) where P
     return face(tait, he1) != 0
 end
 
-function check(tait::Tait{P}, m::Match{:swap_genus, P}) where P
+function check(tait::Tait{P}, m::Match{:swap_genus}) where P
+    has_subgraph(tait, m) || return false
     vs = m.vertices
     hes = m.half_edges
-    all(has_vertex(tait, v) for v in vs) || return false
-    all(has_half_edge(tait, he) for he in hes) || return false
+
     all(is_genus(tait, g) for g in vs[1:4]) || return false
     all(!is_genus(tait, v) for v in vs[5:9]) || return false
     v0 = vs[9]

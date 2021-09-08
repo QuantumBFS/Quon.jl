@@ -46,7 +46,7 @@ function rewrite!(tait::Tait, m::Match{:charge_rm_v})
         for he in hes
             tait.phases[he] = p0
             tait.phases[twin(tait, he)] = p0
-            rewrite!(tait, Match{:identity}(tait, [], [he]))
+            rewrite!(tait, Match{:identity}([], [he]))
         end
         return tait
     end
@@ -62,7 +62,7 @@ function rewrite!(tait::Tait, m::Match{:charge_rm_v})
     end
     for i = 1:(length(hes))
         rem_edge!(tait, hes[i]; update = true)
-        rewrite!(tait, Match{:identity}(tait, [], [hes_identity[i]]))
+        rewrite!(tait, Match{:identity}([], [hes_identity[i]]))
     end
     return tait
 end
@@ -93,7 +93,7 @@ function rewrite!(tait::Tait, m::Match{:z_fusion})
     tait.phases[twin1] = p
     tait.phases[he2] = p0
     tait.phases[twin2] = p0
-    rewrite!(tait, Match{:identity}(tait, [], [he2]))
+    rewrite!(tait, Match{:identity}([], [he2]))
     return tait
 end
 
@@ -111,7 +111,7 @@ function rewrite!(tait::Tait, m::Match{:x_fusion})
     tait.phases[twin1] = p
     tait.phases[he2] = p0
     tait.phases[twin2] = p0
-    rewrite!(tait, Match{:identity}(tait, [], [he2]))
+    rewrite!(tait, Match{:identity}([], [he2]))
     return tait
 end
 
@@ -141,7 +141,7 @@ function rewrite!(tait::Tait{P}, m::Match{:genus_fusion}) where {P <: Phase}
     g1, g2 = m.vertices
     f = face(tait, he_g1)
     new_he1, _ = add_edge!(tait, g1, g2, f, Phase(0.0im, true))
-    rewrite!(tait, Match{:identity}(tait, [], [new_he1]))
+    rewrite!(tait, Match{:identity}([], [new_he1]))
 end
 
 function rewrite!(tait::Tait, m::Match{:swap_genus})
