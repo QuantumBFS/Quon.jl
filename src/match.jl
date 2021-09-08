@@ -23,6 +23,13 @@ function Base.show(io::IO, m::Match)
     return
 end
 
+"""
+    Rule{R}
+
+A struct for rules. `R` can be `:string_genus`, `yang_baxter_star`, `yang_baxter_triangle`, 
+`charge_rm_v`, `charge_rm_f`, `z_fusion`, `x_fusion`, `perm_rz`, `identity`, `genus_fusion`, 
+`swap_genus`.
+"""
 struct Rule{T} end
 Rule(r::Symbol) = Rule{r}()
 
@@ -327,10 +334,4 @@ function is_genus_connected_to_open_edge(tait::Tait, genus)
         end
     end
     return false
-end
-
-function has_open_half_edge(tait::Tait, hes)
-    all(hes) do he
-        !is_open_vertex(tait, dst(tait, he)) && !is_open_vertex(tait, src(tait, he))
-    end
 end

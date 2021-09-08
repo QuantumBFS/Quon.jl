@@ -113,9 +113,9 @@ end
 
 function check(tait::Tait{P}, m::Match{:genus_fusion, P}) where P
     g1, g2 = m.vertices
-    he1, he2 = m.vertices
+    he1, he2 = m.half_edges
     (has_vertex(tait, g1) && has_vertex(tait, g2)) || return false
-    (has_open_half_edge(tait, he1) && has_open_half_edge(tait, he2)) || return false
+    (has_half_edge(tait, he1) && has_half_edge(tait, he2)) || return false
 
     (is_genus(tait, g1) && is_genus(tait, g2)) || return false
     (src(tait, he1) == g1 && src(tait, he2) == g2) || return false
