@@ -136,7 +136,7 @@ function rewrite!(tait::Tait, m::Match{:identity})
     return tait
 end
 
-function rewrite!(tait::Tait{P}, m::Match{:genus_fusion}) where {P <: Phase}
+function rewrite!(tait::Tait, m::Match{:genus_fusion})
     he_g1, _ = m.half_edges
     g1, g2 = m.vertices
     f = face(tait, he_g1)
