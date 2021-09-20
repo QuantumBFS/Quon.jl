@@ -26,6 +26,12 @@ mutable struct PlanarMultigraph
     f_max::Int
 end
 
+Base.copy(g::PlanarMultigraph) = PlanarMultigraph(
+    copy(g.v2he), copy(g.half_edges), copy(g.f2he),
+    copy(g.he2f), copy(g.next), copy(g.twin),
+    copy(g.vs_isolated), g.v_max, g.he_max, g.f_max
+)
+
 vertices(g::PlanarMultigraph) = vcat(collect(keys(g.v2he)), collect(keys(g.vs_isolated)))
 isolated_vertices(g::PlanarMultigraph) = collect(keys(g.vs_isolated))
 is_isolated(g::PlanarMultigraph, v::Integer) = haskey(g.vs_isolated, v)
@@ -57,7 +63,7 @@ twin(g::PlanarMultigraph, he::Integer) = ϕ(g, he)
 σ(g::PlanarMultigraph, he::Integer) = twin(g, prev(g, he))
 σ_inv(g::PlanarMultigraph, he::Integer) = next(g, twin(g, he))
 
-nv(g::PlanarMultigraph) = length(g.v2he)
+nv(g::PlanarMultigraph) = length(g.v2he) + length(g.vs_isolated)
 nf(g::PlanarMultigraph) = length(g.f2he)
 nhe(g::PlanarMultigraph) = length(g.half_edges)
 ne(g::PlanarMultigraph) = nhe(g) ÷ 2
@@ -461,6 +467,96 @@ function contract_edge!(g::PlanarMultigraph, he_id::Integer)
     # v2 is removed
     return (v1, v2)
 end
+
+"""
+    split_edge!(g::PlanarMultigraph, he_id)
+
+Split the edge corresponding to `he` into 2 edges. 
+This is used for creating planar simple graphs from planar multigraphs.
+"""
+function split_edge!(g::PlanarMultigraph, he_id::Integer)
+    f = face(g, he_id)
+    s = src(g, he_id)
+    d = dst(g, he_id)
+    v = add_vertex!(g, f)
+    (he_s1, he_s2) = add_edge!(g, s, v, f)
+    (he_d1, he_d2) = add_edge!(g, d, v, f)
+    rem_edge!(g, he_id)
+    return v, he_s1, he_d1
+end
+
+function simple_connected_planar_graph(g::PlanarMultigraph)
+    g = copy(g)
+    vs_iso = copy(g.vs_isolated)
+    for (v, f) in vs_iso
+        v_f = src(g, surrounding_half_edge(g, f))
+        add_edge!(g, v, v_f, f)
+    end
+    if n_conn_comp(g) != 1
+        @error "there are more than ONE connected components"
+    end
+    
+    hes_splitted = Dict{Int, Int}() # old he -> new v
+    vs = vertices(g)
+    while !isempty(vs)
+        v = pop!(vs)
+        hes_v = trace_vertex(g, v)
+        nbs = Set{Int}()
+        for he in hes_v
+            d = dst(g, he)
+            if !(d in nbs)
+                push!(nbs, d)
+            else
+                he_twin = twin(g, he)
+                new_v, _, _ = split_edge!(g, he)
+                push!(vs, v)
+                hes_splitted[he] = new_v
+                hes_splitted[he_twin] = new_v
+                break
+            end
+        end
+    end
+    return g, hes_splitted
+end
+
+"""
+    normalize(g)
+
+Return a relabeled planar graph.
+"""
+function normalize(g::PlanarMultigraph)
+    f_max = nf(g) - 1
+    he_max = nhe(g)
+    v_max = nv(g)
+    
+    f_map = Dict(zip(faces(g), 0:f_max))
+    he_map = Dict(zip(half_edges(g), 1:he_max))
+    v_map = Dict(zip(sort!(vertices(g)), 1:v_max))
+
+    v2he = Dict{Int, Int}(v_map[v] => he_map[he] for (v, he) in g.v2he)
+    halfedges = Dict{Int, HalfEdge}(
+        he_map[he_id] => HalfEdge(v_map[he.src], v_map[he.dst]) for (he_id, he) in g.half_edges
+    )
+    
+    f2he = Dict{Int, Int}(f_map[f] => he_map[he] for (f, he) in g.f2he)
+    he2f = Dict{Int, Int}(he_map[he] => f_map[f] for (he, f) in g.he2f)
+    
+    next = Dict{Int, Int}(he_map[cur] => he_map[nxt] for (cur, nxt) in g.next)
+    twin = Dict{Int, Int}(he_map[cur] => he_map[twn] for (cur, twn) in g.twin)
+
+    vs_isolated = Dict{Int, Int}(v_map[v] => f_map[f] for (v, f) in g.vs_isolated)
+    
+    g_new = PlanarMultigraph(v2he, halfedges, f2he, he2f, next, twin, vs_isolated, 
+        v_max, he_max, f_max)
+    return g_new, v_map, he_map, f_map
+end
+
+"""
+    n_conn_comp(g::PlanarMultigraph)
+
+Return the number of connected components.
+"""
+n_conn_comp(g::PlanarMultigraph) = nv(g) - ne(g) + nf(g) - 1
 
 has_vertex(g::PlanarMultigraph, v) = haskey(g.v2he, v) || haskey(g.vs_isolated, v)
 has_half_edge(g::PlanarMultigraph, he) = haskey(g.half_edges, he)
