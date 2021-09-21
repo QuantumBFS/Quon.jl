@@ -46,7 +46,6 @@ function plot_graph(vs, es, locs;
         adjmat[v_map[e[1]], v_map[e[2]]] = true
         adjmat[v_map[e[2]], v_map[e[1]]] = true
     end
-    # @show vlabel
     vlabel !== nothing && (vlabel = [vlabel[v_map_inv[v]] for v in 1:N])
     vlabel === nothing && (vlabel = ["$(v_map_inv[v])" for v in 1:N])
     vsize !== nothing && (vsize = [vsize[v_map_inv[v]] for v in 1:N])
@@ -213,7 +212,6 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
         end
     end
 
-    @show new_vs, new_es, vlabel
     return plot_graph(new_vs, new_es, locs; 
         vlabel = vlabel, vsize = vsize, vfill = vfill, vstroke = vstroke,
         tfill = tfill, tsize = tsize, kwargs...)
