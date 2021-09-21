@@ -21,6 +21,10 @@ function generate_locs(g::PlanarMultigraph; he_start = nothing)
     for he in half_edges(g)
         if haskey(hes_map, he)
             push!(new_es, (vs_map[src(g, he)], hes_map[he]))
+            if src(g, he) == dst(g, he) # self-loop
+                (v1, v2) = (hes_map[he], hes_map[twin(g, he)])
+                v1 < v2 && push!(new_es, (v1, v2))
+            end
         else
             s = src(g, he)
             d = dst(g, he)
@@ -42,6 +46,7 @@ function plot_graph(vs, es, locs;
         adjmat[v_map[e[1]], v_map[e[2]]] = true
         adjmat[v_map[e[2]], v_map[e[1]]] = true
     end
+    # @show vlabel
     vlabel !== nothing && (vlabel = [vlabel[v_map_inv[v]] for v in 1:N])
     vlabel === nothing && (vlabel = ["$(v_map_inv[v])" for v in 1:N])
     vsize !== nothing && (vsize = [vsize[v_map_inv[v]] for v in 1:N])
@@ -92,7 +97,7 @@ function plot_graph(adjmat, locs; padding = 0.2,
     )
 end
 
-function plot_planar(g::PlanarMultigraph; scale = 10)
+function plot_planar(g::PlanarMultigraph; kwargs...)
     v_locs, he_locs, v_map, hes_map, new_vs, new_es = generate_locs(g)
     locs = Dict()
     for v in vertices(g)
@@ -101,10 +106,11 @@ function plot_planar(g::PlanarMultigraph; scale = 10)
     for (he, v) in hes_map
         locs[v] = he_locs[he]
     end
-    return plot_graph(new_vs, new_es, locs)
+    vlabel = Dict(v1 => "$v0" for (v0, v1) in v_map)
+    return plot_graph(new_vs, new_es, locs; vlabel = vlabel, kwargs...)
 end
 
-function plot_planar(q::Tait; kwargs...)
+function plot_planar(q::Tait; scale = 1, kwargs...)
     if length(q.inputs) > 0
         hes0 = trace_vertex(q, q.inputs[1])
         he_start = hes0[findfirst(he -> (face(q, he) == 0), hes0)]
@@ -120,12 +126,12 @@ function plot_planar(q::Tait; kwargs...)
     tfill = Dict()
     tsize = Dict()
     for v in vertices(q)
-        locs[v_map[v]] = v_locs[v]
+        locs[v_map[v]] = (v_locs[v][1] * scale, v_locs[v][2] * scale)
         vsize[v_map[v]] = is_open_vertex(q, v) ? 0.06 : 0.04
         vfill[v_map[v]] = is_open_vertex(q, v) ? "white" : (is_genus(q, v) ? "white" : "royalblue")
         vstroke[v_map[v]] = is_open_vertex(q, v) ? "white" : "royalblue"
         tfill[v_map[v]] = "red"
-        tsize[v_map[v]] = 8pt
+        tsize[v_map[v]] = 8/scale*pt
     end
     vlabel = Dict(v1 => "$v0" for (v0, v1) in v_map)
     for v in q.inputs
@@ -134,14 +140,52 @@ function plot_planar(q::Tait; kwargs...)
     for v in q.outputs
         vlabel[v_map[v]] = "$(v)ₒ"
     end
+    self_loops = Set{Int}()
     for (he, v) in hes_map
-        locs[v] = he_locs[he]
-        vsize[v] = 0.04
-        vfill[v] = "gray"
-        vstroke[v] = "gray"
-        vlabel[v] = "$(phase(q, he))"
-        tfill[v] = "black"
-        tsize[v] = 5pt
+        if src(q, he) != dst(q, he)
+            locs[v] = (he_locs[he][1]*scale, he_locs[he][2]*scale)
+            vfill[v] = "gray"
+            vstroke[v] = "gray"
+            if is_open_half_edge(q, he)
+                vsize[v] = 0
+                vlabel[v] = ""
+            else
+                vsize[v] = 0.04/scale
+                vlabel[v] = "$(phase(q, he))"
+            end
+            tfill[v] = "black"
+            tsize[v] = 5/scale*pt
+        else
+            he1 = he
+            he2 = twin(q, he)
+            if !(he1 in self_loops) 
+                push!(self_loops, he1, he2)
+                continue
+            end
+            v1 = v
+            v2 = hes_map[he2]
+            locs[v1] = (he_locs[he1][1]*scale, he_locs[he1][2]*scale)
+            locs[v2] = (he_locs[he2][1]*scale, he_locs[he2][2]*scale)
+            vfill[v1] = "gray"
+            vfill[v2] = "gray"
+            vstroke[v1] = "gray"
+            vstroke[v2] = "gray"
+            if is_open_half_edge(q, he1)
+                vsize[v1] = 0
+                vsize[v2] = 0
+                vlabel[v1] = ""
+                vlabel[v2] = ""
+            else
+                vsize[v1] = 0.04/scale
+                vlabel[v1] = "$(phase(q, he))"
+                vsize[v2] = 0
+                vlabel[v2] = ""
+            end
+            tfill[v1] = "black"
+            tfill[v2] = "black"
+            tsize[v1] = 5/scale*pt
+            tsize[v2] = 5/scale*pt
+        end
     end
 
     hes_recorded = Set(keys(hes_map))
@@ -157,18 +201,19 @@ function plot_planar(q::Tait; kwargs...)
         push!(new_es, (v_max, v2))
         locs[v_max] = ((locs[v1][1] + locs[v2][1])/2, (locs[v1][2] + locs[v2][2])/2)
         tfill[v_max] = "black"
-        tsize[v_max] = 5pt
+        tsize[v_max] = 5/scale*pt
         vfill[v_max] = "gray"
         vstroke[v_max] = "gray"
         if is_open_half_edge(q, he)
             vsize[v_max] = 0.0
             vlabel[v_max] = ""
         else
-            vsize[v_max] = 0.04
+            vsize[v_max] = 0.04/scale
             vlabel[v_max] = "$(phase(q, he))"
         end
     end
 
+    @show new_vs, new_es, vlabel
     return plot_graph(new_vs, new_es, locs; 
         vlabel = vlabel, vsize = vsize, vfill = vfill, vstroke = vstroke,
         tfill = tfill, tsize = tsize, kwargs...)

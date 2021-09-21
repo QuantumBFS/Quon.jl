@@ -5,3 +5,7 @@ function plot(q::Tait; backend = :planar, kwargs...)
     backend === :compose && return plot_compose(q; kwargs...)
     backend === :planar && return plot_planar(q; kwargs...)
 end
+
+function plot(g::PlanarMultigraph; backend = :planar, kwargs...)
+    backend === :planar && return plot_planar(g; kwargs...)
+end

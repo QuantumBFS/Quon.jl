@@ -475,14 +475,40 @@ Split the edge corresponding to `he` into 2 edges.
 This is used for creating planar simple graphs from planar multigraphs.
 """
 function split_edge!(g::PlanarMultigraph, he_id::Integer)
-    f = face(g, he_id)
+    he1 = he_id
+    he2 = twin(g, he_id)
+    next1 = next(g, he1)
+    next2 = next(g, he2)
+    f1 = face(g, he1)
+    f2 = face(g, he2)
     s = src(g, he_id)
     d = dst(g, he_id)
-    v = add_vertex!(g, f)
-    (he_s1, he_s2) = add_edge!(g, s, v, f)
-    (he_d1, he_d2) = add_edge!(g, d, v, f)
-    rem_edge!(g, he_id)
-    return v, he_s1, he_d1
+    g.v_max += 1
+    v = g.v_max
+    g.he_max += 2
+    nhe1 = g.he_max - 1
+    nhe2 = g.he_max
+
+    g.next[he1] = nhe1
+    g.next[nhe1] = next1
+    g.next[he2] = nhe2
+    g.next[nhe2] = next2
+    g.twin[nhe1] = he2
+    g.twin[he2] = nhe1
+    g.twin[nhe2] = he1
+    g.twin[he1] = nhe2
+
+    g.half_edges[he1] = HalfEdge(s, v)
+    g.half_edges[nhe2] = HalfEdge(v, s)
+    g.half_edges[nhe1] = HalfEdge(v, d)
+    g.half_edges[he2] = HalfEdge(d, v)    
+
+    g.he2f[nhe1] = f1
+    g.he2f[nhe2] = f2
+
+    g.v2he[v] = nhe1
+
+    return v, nhe1, nhe2
 end
 
 function simple_connected_planar_graph(g::PlanarMultigraph)
@@ -504,7 +530,15 @@ function simple_connected_planar_graph(g::PlanarMultigraph)
         nbs = Set{Int}()
         for he in hes_v
             d = dst(g, he)
-            if !(d in nbs)
+            if d == v   # self-loop
+                he_twin = twin(g, he)
+                new_v1, he1, _ = split_edge!(g, he)
+                push!(vs, v)
+                hes_splitted[he] = new_v1
+                new_v2, _, _ = split_edge!(g, he1)
+                hes_splitted[he_twin] = new_v2
+                break
+            elseif !(d in nbs)
                 push!(nbs, d)
             else
                 he_twin = twin(g, he)
