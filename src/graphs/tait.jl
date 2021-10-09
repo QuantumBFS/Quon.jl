@@ -40,6 +40,9 @@ rem_face!(q::Tait, id) = rem_face!(q.g, id)
 update_face!(q::Tait, id) = update_face!(q.g, id)
 is_isolated(q::Tait, id) = is_isolated(q.g, id)
 add_vertex!(q::Tait, id) = add_vertex!(q.g, id)
+has_vertex(q::Tait, id) = has_vertex(q.g, id)
+has_half_edge(q::Tait, id) = has_half_edge(q.g, id)
+has_face(q::Tait, id) = has_face(q.g, id)
 
 function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where P
     (new_he1, new_he2) = add_edge!(q.g, v1, v2, f)
@@ -135,9 +138,23 @@ function change_direction!(q::Tait, e_id::Integer)
     q.phases[twin(q, e_id)] = p
     return q
 end
-is_open(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
+
+"""
+    is_open_vertex(q::Tait, v)
+
+Returns `true` if `v` represent a special vertex for open edges.
+"""
+is_open_vertex(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
+
+"""
+    is_open_half_edge(q::Tait, he)
+
+Returns `true` if `he` is an open half edge.
+"""
+is_open_half_edge(q::Tait, he::Integer) = !haskey(q.phases, he)
 
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
+    length(va) == length(vb) || error("Size of the input Tait graph and the output Tait graph mismatch")
     v_max_A = A.g.v_max
     merge_graph!(A, B; delta = 3.0)
     vb = vb .+ v_max_A

@@ -1,10 +1,12 @@
 using Test
 using Quon
+using Quon: check
 
-@testset "string genus" begin
+@testset "string-genus Rule" begin
     c = contract!(tait_copy(), tait_copy(), [2, 3], [1, 3])
     m = Quon.match(Quon.Rule{:string_genus}(), c)
     @test length(m) == 1
+    @test check(c, m[1])
     g = m[1].vertices[1]
     rewrite!(c, m[1])
     @test !(g in c.genuses)
@@ -14,9 +16,11 @@ end
     rz2 = contract!(tait_rz(0*im), tait_rz(0*im))
     m = Quon.match(Quon.Rule{:perm_rz}(), rz2)
     @test length(m) == 2
+    @test check(rz2, m[1]) && check(rz2, m[2])
 
     rz = tait_rz(0*im)
     m = Quon.match(Quon.Rule{:perm_rz}(), rz)
+    @test check(rz, m[1])
     Quon.rewrite!(rz, m[1])
     @test rz.g.f_max == 4
 end
@@ -25,10 +29,12 @@ end
     ry = contract!(contract!(tait_rz(pi/2*im), tait_rx(-π/2*im)), tait_rz(π/2*im))
     m1 = match(Rule{:yang_baxter_triangle}(), ry)
     @test length(m1) == 1
+    @test check(ry, m1[1])
     rewrite!(ry, m1[1])
 
     m2 = match(Rule{:yang_baxter_star}(), ry)
     @test length(m2) == 1
+    @test check(ry, m2[1])
     Quon.rewrite!(ry, m2[1])
     m3 = match(Rule{:yang_baxter_triangle}(), ry)
     @test length(m3) == 1
@@ -37,15 +43,37 @@ end
 @testset "Fusion Rule" begin
     rx2 = contract!(tait_rx(π/2*im), tait_rx(π/2*im))
     mx = match(Rule{:x_fusion}(), rx2)
+    @test check(rx2, mx[1])
     rewrite!(rx2, mx[1])
     @test length(rx2.phases) == 2
 
     rz2 = contract!(tait_rz(π/2*im), tait_rz(π/2*im))
     mz = match(Rule{:z_fusion}(), rz2)
+    @test check(rz2, mz[1])
     rewrite!(rz2, mz[1])
     @test length(rz2.phases) == 2
+end
 
-    plot(rz2)
+@testset "charge remove" begin
+    rx2 = contract!(tait_rx(pi*im), tait_rx(pi*im))
+    m_charge_rm_v = match(Rule(:charge_rm_v), rx2)
+    @test check(rx2, m_charge_rm_v[1])
+    rewrite!(rx2, m_charge_rm_v[1])
+    @test nv(rx2) == 5
+
+    rz2 = contract!(tait_rz(pi*im), tait_rz(pi*im))
+    m_charge_rm_f = match(Rule(:charge_rm_f), rz2)
+    @test check(rz2, m_charge_rm_f[1])
+    rewrite!(rz2, m_charge_rm_f[1])
+    @test nv(rz2) == 5
+end
+
+@testset "SWAP-genus Rule" begin
+    s2 = contract!(tait_swap(), tait_swap())
+    m_swap_genus = match(Rule(:swap_genus), s2)
+    @test check(s2, m_swap_genus[1])
+    rewrite!(s2, m_swap_genus[1])
+    @test !check(s2, m_swap_genus[1])
 end
 
 # TODO: fix locations for cz

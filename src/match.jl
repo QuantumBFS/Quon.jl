@@ -1,12 +1,13 @@
-struct Match{R, P}
-    parent::Tait{P}
+struct Match{R}
+    # TODO: do we need the `parent`
+    # parent::Tait{P}
     vertices::Vector{Int}
     half_edges::Vector{Int} # half edge id
 end
 
-function Match{R}(parent::Tait{P}, vertices, half_edges) where {R, P}
-    Match{R, P}(parent, vertices, half_edges)
-end
+# function Match{R}(parent::Tait{P}, vertices, half_edges) where {R, P}
+#     Match{R, P}(parent, vertices, half_edges)
+# end
 
 function Base.show(io::IO, m::Match)
     print(io, "Match:")
@@ -22,24 +23,31 @@ function Base.show(io::IO, m::Match)
     return
 end
 
+"""
+    Rule{R}
+
+A struct for rules. `R` can be `:string_genus`, `yang_baxter_star`, `yang_baxter_triangle`, 
+`charge_rm_v`, `charge_rm_f`, `z_fusion`, `x_fusion`, `perm_rz`, `identity`, `genus_fusion`, 
+`swap_genus`.
+"""
 struct Rule{T} end
 Rule(r::Symbol) = Rule{r}()
 
-Base.match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R, P}[], r, tait)
+Base.match(r::Rule{R}, tait::Tait{P}) where {R, P} = match!(Match{R}[], r, tait)
 
 function match!(matches, ::Rule{:string_genus}, tait::Tait)
     for (v, _) in tait.g.vs_isolated
-        v in tait.genuses && push!(matches, Match{:string_genus}(tait, [v], Int[]))
+        v in tait.genuses && push!(matches, Match{:string_genus}([v], Int[]))
     end
     return matches
 end
 
 function match!(matches, ::Rule{:yang_baxter_star}, tait::Tait)
-    for (v, _) in tait.g.v2he
-        is_open(tait, v) && continue
+    for v in vertices(tait)
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
-        if length(hes) == 3 && all(x->!is_open(tait, dst(tait, x)), hes)
-            push!(matches, Match{:yang_baxter_star}(tait, [v], hes))
+        if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
+            push!(matches, Match{:yang_baxter_star}([v], hes))
         end
     end
     return matches
@@ -50,31 +58,60 @@ function match!(matches, ::Rule{:yang_baxter_triangle}, tait::Tait)
         f == 0 && continue
         hes = trace_face(tait, f)
         length(hes) == 3 || continue
-        has_open_half_edge(tait, hes) || continue
-        push!(matches, Match{:yang_baxter_triangle}(tait, [], hes))
+        all(x->!is_open_vertex(tait, dst(tait, x)), hes) || continue
+        push!(matches, Match{:yang_baxter_triangle}([], hes))
     end
     return matches
 end
 
 function match!(matches, ::Rule{:charge_rm_v}, tait::Tait)
-    for (v, _) in tait.g.v2he
-        is_open(tait, v) && continue
+    for v in vertices(tait)
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
-        ismatch = true
-        for he in hes
-            haskey(tait.phases, he) || (ismatch = false; break)
-            p = phase(tait, he)
-            if !p.isparallel
-                if !is_singular_change_direction(p)
-                    change_direction!(tait, he)
-                else
-                    ismatch = false; break
+        if length(hes) == 1
+            if !is_open_half_edge(tait, hes[1])
+                p = phase(tait, hes[1])
+                if is_phase_pi(p) && is_parallel(p)
+                    push!(matches, Match{:charge_rm_v}([v], hes))
                 end
             end
-            isapprox(real(p.param), 0; atol = quon_atol) || (ismatch = false; break)
-            isapprox(rem2pi(imag(p.param), RoundDown), π; atol = quon_atol) || (ismatch = false; break)
+            continue
         end
-        ismatch && push!(matches, Match{:charge_rm_v}(tait, [v], hes))
+        
+        i1 = findfirst(hes) do x
+            if is_open_half_edge(tait, x)
+                return true
+            else 
+                return !is_phase_pi(phase(tait, x)) || !is_parallel(phase(tait, x))
+            end
+        end
+        if i1 === nothing
+            push!(matches, Match{:charge_rm_v}([v], hes))
+            continue
+        end
+
+        hes = permute!(hes, [collect(i1:length(hes)); collect(1:(i1-1))])
+        hes_match = Int[]
+        for i = eachindex(hes)
+            is_match = false
+            he = hes[i]
+            if !is_open_half_edge(tait, he)
+                p = phase(tait, he)
+                if is_parallel(p) && is_phase_pi(p)
+                    push!(hes_match, he)
+                    is_match = true
+                    if he == hes[end]
+                        (length(hes_match) > 1) && push!(matches, Match{:charge_rm_v}([v], hes_match))
+                    end
+                end
+            end
+            if !is_match
+                if length(hes_match) > 1
+                    push!(matches, Match{:charge_rm_v}([v], hes_match))
+                end
+                !isempty(hes_match) && (hes_match = Int[])
+            end
+        end
     end
     return matches
 end
@@ -83,22 +120,42 @@ function match!(matches, ::Rule{:charge_rm_f}, tait::Tait)
     for f in faces(tait)
         f == 0 && continue
         hes = trace_face(tait, f)
-        has_open_half_edge(tait, hes) || continue
-        ismatch = true
-        for he in hes
-            haskey(tait.phases, he) || (ismatch = false; break)
-            p = phase(tait, he)
-            if p.isparallel
-                if !is_singular_change_direction(p)
-                    change_direction!(tait, he)
-                else
-                    ismatch = false; break
+        
+        i1 = findfirst(hes) do x
+            if is_open_half_edge(tait, x)
+                return true
+            else 
+                return !is_phase_pi(phase(tait, x)) || !is_parallel(phase(tait, x))
+            end
+        end
+        if i1 === nothing
+            println(f)
+            (length(hes) > 1) && push!(matches, Match{:charge_rm_f}([], hes))
+            continue
+        end
+
+        hes = permute!(hes, [collect(i1:length(hes)); collect(1:(i1-1))])
+        hes_match = Int[]
+        for i = eachindex(hes)
+            is_match = false
+            he = hes[i]
+            if !is_open_half_edge(tait, he)
+                p = phase(tait, he)
+                if !is_parallel(p) && is_phase_pi(p)
+                    push!(hes_match, he)
+                    is_match = true
+                    if he == hes[end]
+                        (length(hes_match) > 1) && push!(matches, Match{:charge_rm_f}([], hes_match))
+                    end
                 end
             end
-            isapprox(real(p.param), 0; atol = quon_atol) || (ismatch = false; break)
-            isapprox(rem2pi(imag(p.param), RoundDown), π; atol = quon_atol) || (ismatch = false; break)
+            if !is_match
+                if length(hes_match) > 1
+                    push!(matches, Match{:charge_rm_f}([], hes_match))
+                end
+                !isempty(hes_match) && (hes_match = Int[])
+            end
         end
-        push!(matches, Match{:charge_rm_f}(tait, [], hes))
     end
     return matches
 end
@@ -108,8 +165,8 @@ function match!(matches, ::Rule{:z_fusion}, tait::Tait)
         f == 0 && continue
         hes = trace_face(tait, f)
         length(hes) == 2 || continue
-        has_open_half_edge(tait, hes) || continue
-        push!(matches, Match{:z_fusion}(tait, [], hes))
+        all(he -> !is_open_half_edge(tait, he), hes) || continue
+        push!(matches, Match{:z_fusion}([], hes))
     end
     return matches
 end
@@ -117,43 +174,38 @@ end
 function match!(matches, ::Rule{:x_fusion}, tait::Tait)
     for v in vertices(tait)
         is_genus(tait, v) && continue
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
         length(hes) == 2 || continue
-        has_open_half_edge(tait, hes) || continue
-        push!(matches, Match{:x_fusion}(tait, [], hes))
+        all(he -> !is_open_half_edge(tait, he), hes) || continue
+        push!(matches, Match{:x_fusion}([v], hes))
     end
     return matches
 end
 
-# TODO: can we just match 3 genuses?
 function match!(matches, ::Rule{:perm_rz}, tait::Tait)
     for v in vertices(tait)
-        is_open(tait, v) && continue
+        is_open_vertex(tait, v) && continue
         hes = trace_vertex(tait, v)
-        length(hes) >= 3 || continue
+        # length(hes) >= 3 || continue
         ids = findall(hes) do he
             is_genus(tait, dst(tait, he))
         end
+        # TODO: Should we check isolated genuses?
         length(ids) == 0 && continue
         for idx in ids
             he_genus = hes[idx]
             # find half_edge on the other face that has a genus
-            he_out = he_genus
+            he_out = σ_inv(tait, he_genus)
             for _ in 2:(length(hes) - 1)
                 he_out = σ_inv(tait, he_out)
-                he = twin(tait, he_out)
-                he0 = he
-                while !is_genus(tait, dst(tait, he))
+                he = he_out
+                while !is_genus(tait, src(tait, he))
                     he = next(tait, he)
-                    he == he0 && break
+                    he == he_out && break
                 end
-                if he != he0 && dst(tait, he) != dst(tait, he_genus)
-                    push!(matches, Match{:perm_rz}(
-                        tait,
-                        [v, dst(tait, he)],
-                        [he_genus, he]
-                        )
-                    )
+                if he != he_out && src(tait, he) != dst(tait, he_genus)
+                    push!(matches, Match{:perm_rz}([v, src(tait, he)], [he_genus, he]))
                 end
             end
         end
@@ -163,8 +215,8 @@ end
 
 function match!(matches, ::Rule{:identity}, tait::Tait)
     for (he_id, theta) in tait.phases
-        if is_phase_approx_zero(theta)
-            push!(matches, Match{:identity}(tait, [], [he_id]))
+        if is_phase_zero(theta)
+            push!(matches, Match{:identity}([], [he_id]))
         end
     end
     return matches
@@ -180,7 +232,7 @@ function match!(matches, ::Rule{:genus_fusion}, tait::Tait)
             while he != he_g
                 v = src(tait, he)
                 if is_genus(tait, v)
-                    push!(matches, Match{:genus_fusion}(tait, [g, v], [he_g, he]))
+                    push!(matches, Match{:genus_fusion}([g, v], [he_g, he]))
                 end
                 he = next(tait, he)
             end
@@ -191,11 +243,13 @@ end
 
 function match!(matches, ::Rule{:swap_genus}, tait::Tait)
     for v0 in vertices(tait)
-        hes = trace_vertex(tait, v)
-        length(hes) == 4 || continue
+        is_genus(tait, v0) && continue
+        hes_v0 = trace_vertex(tait, v0)
+        length(hes_v0) == 4 || continue
+        vs = [dst(tait, he) for he in hes_v0]
 
         faces_contain_4_edges = true
-        for he in hes
+        for he in hes_v0
             f = face(tait, he)
             f_hes = trace_face(tait, f)
             if length(f_hes) != 4
@@ -206,10 +260,9 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
         faces_contain_4_edges || continue
 
         vertices_contain_4_neighbors = true
-        for he in hes
-            v = dst(tait, he)
+        for v in vs
             v_hes = trace_vertex(tait, v)
-            if length(v_hes) != 4
+            if is_genus(tait, v) || length(v_hes) != 4
                 vertices_contain_4_neighbors = false
                 break
             end
@@ -218,14 +271,14 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
 
         # check parameters
         check_swap_parameters(tait, v0) || continue
-        for he in hes
+        for he in hes_v0
             v = dst(tait, he)
             check_swap_parameters(tait, v) || continue
         end
 
         has_4_connected_genuses = true
         connected_genuses = Int[]
-        for he in hes
+        for he in hes_v0
             he_twin = twin(tait, he)
             he_g = σ_inv(tait, σ_inv(tait, he_twin))
             v_g = dst(tait, he_g)
@@ -240,43 +293,40 @@ function match!(matches, ::Rule{:swap_genus}, tait::Tait)
 
         # find genus has open edge
         idx = findfirst(x->!is_genus_connected_to_open_edge(tait, x), connected_genuses)
-        idx === nothing || continue
+        idx === nothing && continue
 
-        push!(matches, Match{:swap_genus}(tait, [connected_genuses[idx]], []))        
+        push!(matches, 
+            Match{:swap_genus}(
+                [connected_genuses[idx:end]; connected_genuses[1:idx-1]; 
+                    vs[idx:end]; vs[1:idx-1]; v0
+                ], 
+                [hes_v0[idx:end]; hes_v0[1:idx-1]]
+            )
+        )        
     end
     return matches
 end
 
 function check_swap_parameters(tait::Tait, v)
     hes = trace_vertex(tait, v)
-    ps = [phase(tait, he) for he in hes]
-    for i = 1:length(ps)
-        is_parallel = (i % 2 == 0)
-        if ps[i].isparallel != is_parallel
-            ps[i] = change_direction(ps[i])
-        end
+    length(hes) == 4 || return false
+    any(is_open_half_edge(tait, he) for he in hes) && return false
+    (p1, p2, p3, p4) = [phase(tait, he) for he in hes]
+    if is_phase_para_half_pi(p1) && is_phase_para_half_pi(p3) && 
+        is_phase_perp_half_pi(p2) && is_phase_perp_half_pi(p4) 
+        return true
+    elseif is_phase_para_half_pi(p2) && is_phase_para_half_pi(p4) && 
+        is_phase_perp_half_pi(p1) && is_phase_perp_half_pi(p3) 
+        return true
     end
-    all(p -> isapprox(real(p.param), 0; atol = quon_atol), ps) || return false
-    all(p -> isapprox(rem2pi(imag(p.param), RoundDown), π/2; atol = quon_atol), ps) && return true
-    all(p -> isapprox(rem2pi(imag(p.param), RoundDown), 3π/2; atol = quon_atol), ps) && return true
     return false
 end
 
 function is_genus_connected_to_open_edge(tait::Tait, genus)
     for he in trace_vertex(tait, genus)
-        if is_open(tait, dst(tait, he))
+        if is_open_vertex(tait, dst(tait, he))
             return true
         end
     end
     return false
-end
-
-function has_open_half_edge(tait::Tait, hes)
-    all(hes) do he
-        !is_open(tait, dst(tait, he)) && !is_open(tait, src(tait, he))
-    end
-end
-
-function is_phase_approx_zero(theta::Phase)
-    return isapprox(0, theta.param; atol = quon_atol) || isapprox(0, change_direction(theta.param); atol = quon_atol)
 end

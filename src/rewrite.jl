@@ -38,22 +38,43 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_triangle})
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:charge_rm_f})
+function rewrite!(tait::Tait, m::Match{:charge_rm_v})
     hes = m.half_edges
-    p0 = Phase(0.0*im, false)
-    for he in hes
-        tait.phases[he] = p0
-        tait.phases[twin(tait, he)] = p0
+    v = m.vertices[1]
+    p0 = Phase(0.0*im, true)
+    if (σ_inv(tait, hes[1]) == hes[end]) || (length(hes) == 1)
+        for he in hes
+            tait.phases[he] = p0
+            tait.phases[twin(tait, he)] = p0
+            rewrite!(tait, Match{:identity}([], [he]))
+        end
+        return tait
+    end
+
+    hes_identity = Int[]
+    for i = 1:(length(hes)-1)
+        he1 = hes[i]
+        he2 = hes[i+1]
+        v1 = dst(tait, he1)
+        v2 = dst(tait, he2)
+        f = face(tait, he1)
+        push!(hes_identity, add_edge!(tait, v1, v2, f, p0)[1])
+    end
+    for i = 1:(length(hes))
+        rem_edge!(tait, hes[i]; update = true)
+        rewrite!(tait, Match{:identity}([], [hes_identity[i]]))
     end
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:charge_rm_v})
+function rewrite!(tait::Tait, m::Match{:charge_rm_f})
     hes = m.half_edges
-    p0 = Phase(0.0*im, true)
+    f = face(tait, hes[1])
+    if next(tait, hes[end]) != hes[1]
+        add_edge!(tait, src(tait, hes[1]), dst(tait, hes[end]), f, Phase(pi*im, false))
+    end
     for he in hes
-        tait.phases[he] = p0
-        tait.phases[twin(tait, he)] = p0
+        rem_edge!(tait, he; update = true)
     end
     return tait
 end
@@ -72,7 +93,7 @@ function rewrite!(tait::Tait, m::Match{:z_fusion})
     tait.phases[twin1] = p
     tait.phases[he2] = p0
     tait.phases[twin2] = p0
-    rewrite!(tait, Match{:identity}(tait, [], [he2]))
+    rewrite!(tait, Match{:identity}([], [he2]))
     return tait
 end
 
@@ -90,7 +111,7 @@ function rewrite!(tait::Tait, m::Match{:x_fusion})
     tait.phases[twin1] = p
     tait.phases[he2] = p0
     tait.phases[twin2] = p0
-    rewrite!(tait, Match{:identity}(tait, [], [he2]))
+    rewrite!(tait, Match{:identity}([], [he2]))
     return tait
 end
 
@@ -99,7 +120,7 @@ function rewrite!(tait::Tait, m::Match{:perm_rz})
     f = face(tait, m.half_edges[2])
     old_he = m.half_edges[1]
     add_edge!(tait, v_ct, v_g, f, phase(tait, old_he))
-    rem_edge!(tait, old_he)
+    rem_edge!(tait, old_he; update = true)
     return tait
 end
 
@@ -107,7 +128,7 @@ function rewrite!(tait::Tait, m::Match{:identity})
     he = m.half_edges[1]
     p = phase(tait, he)
     isapprox(0, p.param; atol = quon_atol) || (p = change_direction(p))
-    if p.isparallel
+    if is_parallel(p)
         contract_edge!(tait, he)
     else
         rem_edge!(tait, he; update = true)
@@ -115,10 +136,16 @@ function rewrite!(tait::Tait, m::Match{:identity})
     return tait
 end
 
-function rewrite!(tait::Tait{P}, m::Match{:genus_fusion}) where {P <: Phase}
+function rewrite!(tait::Tait, m::Match{:genus_fusion})
     he_g1, _ = m.half_edges
     g1, g2 = m.vertices
     f = face(tait, he_g1)
     new_he1, _ = add_edge!(tait, g1, g2, f, Phase(0.0im, true))
-    rewrite!(tait, Match{:identity}(tait, [], [new_he1]))
+    rewrite!(tait, Match{:identity}([], [new_he1]))
+end
+
+function rewrite!(tait::Tait, m::Match{:swap_genus})
+    g = m.vertices[1]
+    delete!(tait.genuses, g)
+    return tait
 end
