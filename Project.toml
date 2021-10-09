@@ -8,6 +8,7 @@ Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
 NetworkLayout = "46757867-2c16-5918-afeb-47bfcb05e46a"
 PlanarMaps = "291fd964-e446-5d75-9412-e8e0eb420fa7"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+YaoPlots = "32cfe2d9-419e-45f2-8191-2267705d8dbc"
 
 [compat]
 Compose = "0.9"
