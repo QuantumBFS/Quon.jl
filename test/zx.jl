@@ -4,7 +4,11 @@ using ZXCalculus
 q = Tait(2)
 push_gate!(q, Val(:CZ), 1, 2)
 push_gate!(q, Val(:CZ), 1, 2)
+Quon.simplify!(q)
+
+
 plot(q)
+plot(simplify(q))
 plot(q; backend = :compose)
 zxg = ZXDiagram(q) |> ZXGraph |> full_reduction
 zxg |> ancilla_extraction |> plot

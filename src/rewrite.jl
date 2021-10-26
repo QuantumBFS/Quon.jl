@@ -1,3 +1,18 @@
+const rewrite_rules = [
+    :string_genus,
+    :yang_baxter_star,
+    :yang_baxter_triangle,
+    :charge_rm_v,
+    :charge_rm_f,
+    :z_fusion,
+    :x_fusion,
+    :perm_rz,
+    :identity,
+    :genus_fusion,
+    :swap_genus,
+]
+
+
 function rewrite!(tait::Tait, m::Match{:string_genus})
     rem_vertex!(tait, m.vertices[1])
     return tait
