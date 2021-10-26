@@ -1,6 +1,7 @@
 using Quon
 cz = tait_cz()
 contract!(cz, tait_cz())
+Quon.plot_tait(cz)
 cz.locations[59] = (2.0, 1.0)
 cz.locations[45] = (1.0, 1.0)
 cz.locations[60] = (3.0, 1.0)
