@@ -28,10 +28,13 @@ contract!(rz2, rx2)
 idr = tensor_product!(tait_id(), rz2)
 @test length(trace_vertex(idr, 4)) == 5
 
-c = merge_graph!(tait_copy(), tait_copy())
+cp1 = tait_copy()
+push!(cp1.inputs, pop!(cp1.outputs))
+c = merge_graph!(cp1, tait_copy())
 contract_boundary_vertices!(c, [2], [9])
 contract_boundary_vertices!(c, [3], [8])
 @test length(c.g.vs_isolated) == 1
+plot(c)
 
 rx = tait_rx(im)
 plot(rx)
