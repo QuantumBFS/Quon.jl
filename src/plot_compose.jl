@@ -290,7 +290,7 @@ function generate_string(q::Tait, hes_x, hes_y, hes_rot, radius)
         he = pop!(hes)
         if !is_open_vertex(q, src(q, he)) && !is_open_vertex(q, dst(q, he))
             θ = hes_rot[he]
-            crx = generate_phase(hes_x[he], hes_y[he], θ, phase(q, he))
+            crx = generate_phase(hes_x[he], hes_y[he], θ, quon_param(q, he))
             ct_phase = compose(context(), ct_phase, crx)
         end
         delete!(hes, twin(q, he))

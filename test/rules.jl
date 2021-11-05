@@ -45,13 +45,13 @@ end
     mx = match(Rule{:x_fusion}(), rx2)
     @test check(rx2, mx[1])
     rewrite!(rx2, mx[1])
-    @test length(rx2.phases) == 2
+    @test length(rx2.quon_params) == 2
 
     rz2 = contract!(tait_rz(π/2*im), tait_rz(π/2*im))
     mz = match(Rule{:z_fusion}(), rz2)
     @test check(rz2, mz[1])
     rewrite!(rz2, mz[1])
-    @test length(rz2.phases) == 2
+    @test length(rz2.quon_params) == 2
 end
 
 @testset "charge remove" begin

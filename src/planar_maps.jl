@@ -161,7 +161,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
                 vfill[v] = "gray"
                 vstroke[v] = "gray"
                 vsize[v] = 0.04/scale
-                vlabel[v] = "-$he→\n$(phase(q, he))\n←$(twin(q, he))-"
+                vlabel[v] = "-$he→\n$(quon_param(q, he))\n←$(twin(q, he))-"
             end
             tfill[v] = "black"
             tsize[v] = 5/scale*pt
@@ -197,7 +197,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
                 vstroke[v1] = "gray"
                 vstroke[v2] = "gray"
                 vsize[v1] = 0.04/scale
-                vlabel[v1] = "-$he→\n$(phase(q, he))\n←$(twin(q, he))-"
+                vlabel[v1] = "-$he→\n$(quon_param(q, he))\n←$(twin(q, he))-"
                 vsize[v2] = 0
                 vlabel[v2] = ""
             end
@@ -232,7 +232,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
             vfill[v_max] = "gray"
             vstroke[v_max] = "gray"
             vsize[v_max] = 0.04/scale
-            vlabel[v_max] = "-$(he)→\n$(phase(q, he))\n←$(twin(q, he))-"
+            vlabel[v_max] = "-$(he)→\n$(quon_param(q, he))\n←$(twin(q, he))-"
         end
     end
 

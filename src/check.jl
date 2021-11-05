@@ -46,11 +46,11 @@ function check(tait::Tait, m::Match{:charge_rm_v})
     any(is_open_half_edge(tait, he) for he in hes) && return false
     for i = lastindex(hes):2
         σ_inv(tait, hes[i]) == hes[i-1] || return false
-        p = phase(tait, hes[i])
-        (is_phase_pi(p) && is_parallel(p)) || return false
+        p = quon_param(tait, hes[i])
+        (is_param_pi(p) && is_parallel(p)) || return false
     end
-    p1 = phase(tait, hes[1])
-    return is_phase_pi(p1) && is_parallel(p1)
+    p1 = quon_param(tait, hes[1])
+    return is_param_pi(p1) && is_parallel(p1)
 end
 
 function check(tait::Tait, m::Match{:charge_rm_f})
@@ -61,11 +61,11 @@ function check(tait::Tait, m::Match{:charge_rm_f})
     any(is_open_half_edge(tait, he) for he in hes) && return false
     for i = 1:(lastindex(hes)-1)
         next(tait, hes[i]) == hes[i+1] || return false
-        p = phase(tait, hes[i])
-        (is_phase_pi(p) && !is_parallel(p)) || return false
+        p = quon_param(tait, hes[i])
+        (is_param_pi(p) && !is_parallel(p)) || return false
     end
-    p_end = phase(tait, hes[end])
-    return is_phase_pi(p_end) && !is_parallel(p_end)
+    p_end = quon_param(tait, hes[end])
+    return is_param_pi(p_end) && !is_parallel(p_end)
 end
 
 function check(tait::Tait, m::Match{:z_fusion})
@@ -110,7 +110,7 @@ end
 function check(tait::Tait, m::Match{:identity})
     has_subgraph(tait, m) || return false
     he = m.half_edges[1]
-    return is_phase_zero(phase(tait, he))
+    return is_param_zero(quon_param(tait, he))
 end
 
 function check(tait::Tait, m::Match{:genus_fusion})

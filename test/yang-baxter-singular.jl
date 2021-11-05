@@ -2,14 +2,14 @@ using Quon
 
 yang_baxter_param(pi/2*im, pi*im, pi/2*im)
 
-using Quon: Phase
-p1, p2, p3 = Phase(rand()*2π*im, true), Phase(rand()*2π*im, false), Phase(rand()*2π*im, true)
+using Quon: QuonParam
+p1, p2, p3 = QuonParam(rand()*2π*im, true), QuonParam(rand()*2π*im, false), QuonParam(rand()*2π*im, true)
 q1, q2, q3 = yang_baxter_param(p1, p2, p3)
 change_direction.([q1, q2, q3])
 (collect(yang_baxter_param(q1, q2, q3)))
 cdr = change_direction
 a, b = (cdr(q1), cdr(q2))
-r1, r2, r3 = yang_baxter_param(Phase(π/4*im, false), Phase(π/4*im, true), Phase(π/4*im, false))
+r1, r2, r3 = yang_baxter_param(QuonParam(π/4*im, false), QuonParam(π/4*im, true), QuonParam(π/4*im, false))
 cdr(r1).param
 
 a, b, c = yang_baxter_param(3π/4*im, π/2*im, 5π/4*im)

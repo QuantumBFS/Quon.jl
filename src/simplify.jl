@@ -1,8 +1,9 @@
 export simplify!
 
-
 function simulated_annealing(f, x0, temp)
     l_old = f(x0)
+    loss = l_old
+    @show loss
     candidate = copy(x0)
     for epoch in 1:1000
         # local update
@@ -18,6 +19,8 @@ function simulated_annealing(f, x0, temp)
         else
             candidate[idx] = candidate_idx_old
         end
+        loss = l_old
+        @show loss
         l_old = l_new
     end
     return candidate
@@ -28,14 +31,16 @@ function simplify_instance(tait) # -> cost
         for rule in rules
             matches = match(Rule(rule), tait)
             isempty(matches) && continue
-            rewrite!(tait, first(matches))
+            m = first(matches)
+            # @show rule, m
+            rewrite!(tait, m)
         end
         return tait_loss(tait)
     end
 end
 
 function tait_loss(q::Tait)
-    return length(q.phases)/2 + length(q.genuses) * 10
+    return length(q.quon_params)/2 + length(q.genuses) * 10
 end
 
 function simplify!(tait::Tait)
