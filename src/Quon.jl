@@ -19,7 +19,10 @@ export planar_rx, planar_rz, planar_id, planar_copy, planar_zero_state, planar_s
     tait_zero_state, tait_swap
 
 include("utils/yang_baxter.jl")
-include("quon_param.jl")
+
+include("params/quon_param.jl")
+include("params/quon_const.jl")
+
 include("graphs/planar_multigraph.jl")
 include("graphs/tait.jl")
 include("graphs/predefined.jl")

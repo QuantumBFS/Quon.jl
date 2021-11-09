@@ -2,8 +2,6 @@ using Printf
 
 abstract type AbstractQuonParam end
 
-include("quon_const.jl")
-
 mutable struct QuonParam{T <: Number} <: AbstractQuonParam
     param::T
     isparallel::Bool
@@ -60,21 +58,21 @@ end
 
 # function update_yang_baxter_triangle(p1, p2, p3)
 #     q1, q2, q3 = copy(p1), copy(p2), copy(p3)
-#     if is_param_pi(p1) && !p1.isparallel
-#         if is_param_pi(p2) && !p2.isparallel
+#     if is_pi(p1) && !p1.isparallel
+#         if is_pi(p2) && !p2.isparallel
 #             q1.param = zero(p1.param)
 #             q2.param = zero(p2.param)
-#             if is_param_pi(p3) && !p3.isparallel
+#             if is_pi(p3) && !p3.isparallel
 #                 q3.param = zero(q3.param)
 #             else
 #                 q3 = q3 + QuonParam(pi*im, false)
 #             end
-#         elseif is_param_pi(p3) && !p3.isparallel
+#         elseif is_pi(p3) && !p3.isparallel
 #             q1.param = zero(p1.param)
 #             q3.param = zero(p3.param)
 #             q2 = q2 + QuonParam(pi*im, false)
 #         end
-#     elseif is_param_pi(p2) && !p2.isparallel && is_param_pi(p3) && !p3.isparallel
+#     elseif is_pi(p2) && !p2.isparallel && is_pi(p3) && !p3.isparallel
 #         q2.param = zero(p1.param)
 #         q3.param = zero(p3.param)
 #         q1 = q1 + QuonParam(pi*im, false)
@@ -83,21 +81,21 @@ end
 # end
 # function update_yang_baxter_star(p1, p2, p3)
 #     q1, q2, q3 = p1, p2, p3
-#     if is_param_pi(p1) && p1.isparallel
-#         if is_param_pi(p2) && p2.isparallel
+#     if is_pi(p1) && p1.isparallel
+#         if is_pi(p2) && p2.isparallel
 #             q1.param = zero(p1.param)
 #             q2.param = zero(p2.param)
-#             if is_param_pi(p3) && p3.isparallel
+#             if is_pi(p3) && p3.isparallel
 #                 q3.param = zero(q3.param)
 #             else
 #                 q3 = q3 + QuonParam(pi*im, true)
 #             end
-#         elseif is_param_pi(p3) && p3.isparallel
+#         elseif is_pi(p3) && p3.isparallel
 #             q1.param = zero(p1.param)
 #             q3.param = zero(p3.param)
 #             q2 = q2 + QuonParam(pi*im, true)
 #         end
-#     elseif is_param_pi(p2) && p2.isparallel && is_param_pi(p3) && p3.isparallel
+#     elseif is_pi(p2) && p2.isparallel && is_pi(p3) && p3.isparallel
 #         q2.param = zero(p1.param)
 #         q3.param = zero(p3.param)
 #         q1 = q1 + QuonParam(pi*im, true)
@@ -107,30 +105,36 @@ end
 
 is_parallel(p::QuonParam) = p.isparallel
 
-is_param_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+is_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
     isapprox(rem(imag(p.param)+pi, 2pi, RoundNearest), 0, atol = atol))
-is_param_zero(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+is_zero(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
     isapprox(rem(imag(p.param), 2pi, RoundNearest), 0, atol = atol))
-is_param_half_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+is_half_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
     isapprox(rem(imag(p.param), 2pi, RoundNearest), π/2, atol = atol))
-is_param_minus_half_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
+is_minus_half_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
     isapprox(rem(imag(p.param), 2pi, RoundNearest), -π/2, atol = atol))
 
+is_para_pi(p::QuonParam) = is_parallel(p) && is_pi(p)
+is_perp_pi(p::QuonParam) = !is_parallel(p) && is_pi(p)
+is_para_zero(p::QuonParam) = is_parallel(p) && is_zero(p)
+is_perp_zero(p::QuonParam) = !is_parallel(p) && is_zero(p)
+
+
 """
-    is_param_para_half_pi(p; atol = atol)
+    is_para_half_pi(p; atol = atol)
 
 Returns `true` if `p` ≈ `π/2 (∥)` or `-π/2 (⊥)`.
 """
-is_param_para_half_pi(p::QuonParam; atol = quon_atol) = (p.isparallel && is_param_half_pi(p; atol = atol)) || 
-    (!p.isparallel && is_param_minus_half_pi(p; atol = atol))
+is_para_half_pi(p::QuonParam; atol = quon_atol) = (p.isparallel && is_half_pi(p; atol = atol)) || 
+    (!p.isparallel && is_minus_half_pi(p; atol = atol))
 
 """
-    is_param_perp_half_pi(p; atol = atol)
+    is_perp_half_pi(p; atol = atol)
 
 Returns `true` if `p` ≈ `π/2 (⊥)` or `-π/2 (∥)`.
 """
-is_param_perp_half_pi(p::QuonParam; atol = quon_atol) = (!p.isparallel && is_param_half_pi(p; atol = atol)) || 
-    (p.isparallel && is_param_minus_half_pi(p; atol = atol))
+is_perp_half_pi(p::QuonParam; atol = quon_atol) = (!p.isparallel && is_half_pi(p; atol = atol)) || 
+    (p.isparallel && is_minus_half_pi(p; atol = atol))
 
 function yang_baxter_param(p1::QuonParam, p2::QuonParam, p3::QuonParam)
     # triangle => star

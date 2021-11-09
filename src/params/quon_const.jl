@@ -4,10 +4,10 @@ const ParaHalfPi = QuonConst{Symbol("∥ π/2⋅im")}()
 const PerpHalfPi = QuonConst{Symbol("⊥ π/2⋅im")}()
 const ParaNegHalfPi = QuonConst{Symbol("∥ -π/2⋅im")}()
 const PerpNegHalfPi = QuonConst{Symbol("⊥ -π/2⋅im")}()
-const ParaPi = QuonConst{Symbol("∥ π⋅im")}()
-const PerpPi = QuonConst{Symbol("⊥ π⋅im")}()
 const ParaZero = QuonConst{Symbol("∥ 0")}()
 const PerpZero = QuonConst{Symbol("⊥ 0")}()
+const ParaPi = QuonConst{Symbol("∥ π⋅im")}()
+const PerpPi = QuonConst{Symbol("⊥ π⋅im")}()
 const ParaInfZero = QuonConst{Symbol("CD(⊥ 0)")}()
 const PerpInfZero = QuonConst{Symbol("CD(∥ 0)")}()
 const ParaInfPi = QuonConst{Symbol("CD(⊥ π⋅im)")}()
@@ -15,6 +15,8 @@ const PerpInfPi = QuonConst{Symbol("CD(∥ π⋅im)")}()
 
 Base.show(io::IO, ::QuonConst{S}) where S = print(io, "$S")
 Base.copy(p::QuonConst{S}) where S = p
+Base.:(==)(p1::QuonConst{S1}, p2::QuonConst{S2}) where {S1, S2} = (p1 === p2) || (change_direction(p1) === p2)
+# Base.:(==)(p1::QuonParam, ::typeof(ParaHalfPi)) = 
 
 const eq_cd = [
     (ParaHalfPi, PerpNegHalfPi),
@@ -43,12 +45,12 @@ for p in (PerpHalfPi, PerpNegHalfPi, PerpPi, PerpZero, PerpInfZero, PerpInfPi)
     @eval is_parallel(::typeof($p)) = false
 end
 
-# is_param_pi(p::QuonConst; atol = quon_atol)
-# is_param_zero(p::QuonConst; atol = quon_atol)
-# is_param_half_pi(p::QuonConst; atol = quon_atol)
-# is_param_minus_half_pi(p::QuonConst; atol = quon_atol)
-# is_param_para_half_pi(p::QuonConst; atol = quon_atol)
-# is_param_perp_half_pi(p::QuonConst; atol = quon_atol)
+is_para_pi(p::QuonConst) = (p == ParaPi)
+is_perp_pi(p::QuonConst) = (p == ParaPi)
+is_para_zero(p::QuonConst) = (p == ParaZero)
+is_perp_zero(p::QuonConst) = (p == PerpZero)
+is_para_half_pi(p::QuonConst) = (p == ParaHalfPi)
+is_perp_half_pi(p::QuonConst) = (p == PerpHalfPi)
 
 # function yang_baxter_param(p1::QuonConst, p2::QuonConst, p3::QuonConst)
 #     # triangle => star
