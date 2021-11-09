@@ -10,20 +10,24 @@ function yb_fidelity(a1, b1, c1)
     return operator_fidelity(circ1, circ2)
 end
 
-a = rand()*π*im
-b = rand()*π*im
-c = rand()*π*im
+a1 = rand()*π*im
+b1 = rand()*π*im
+c1 = rand()*π*im
 
-@test yb_fidelity(a, b, c) ≈ 1
-@test yb_fidelity(yang_baxter_param(a, b, c)...) ≈ 1
+a2, b2, c2 = yang_baxter_param(a1, b1, c1)
 
-c = -a
-@test yb_fidelity(a, b, c) ≈ 1
-@test yb_fidelity(yang_baxter_param(a, b, c)...) ≈ 1
+@test yb_fidelity(a1, b1, c1) ≈ 1
+@test yb_fidelity(a2, b2, c2) ≈ 1
 
-c = π*im - a
-@test yb_fidelity(a, b, c) ≈ 1
-@test yb_fidelity(yang_baxter_param(a, b, c)...) ≈ 1
+c1 = -a1
+a2, b2, c2 = yang_baxter_param(a1, b1, c1)
+@test yb_fidelity(a1, b1, c) ≈ 1
+@test yb_fidelity(a2, b2, c2) ≈ 1
+
+c1 = π*im - a1
+a2, b2, c2 = yang_baxter_param(a1, b1, c1)
+@test yb_fidelity(a1, b1, c) ≈ 1
+@test yb_fidelity(a2, b2, c2) ≈ 1
 
 @test_throws ErrorException yang_baxter_param(pi/2*im, pi/2*im, pi/2*im)
 @test_throws ErrorException yang_baxter_param(change_direction(pi/3*im), pi/3*im, change_direction(pi/3*im))
