@@ -250,6 +250,34 @@ function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
             contract_edge!(q, out_a[k])
         end
     end
+    
+    # make sure the input and output vertices are sorted from left to right
+    bds = Int[]
+    for he in trace_face(q, 0)
+        v = src(q, he)
+        if v in q.inputs || v in q.outputs
+            push!(bds, v)
+        end
+    end
+    i_ids = findall(v -> (v in q.inputs), bds)
+    o_ids = findall(v -> (v in q.outputs), bds)
+    if !isempty(i_ids)
+        @show i_ids
+        if i_ids[end] - i_ids[1] + 1 == length(i_ids)
+            q.inputs[:] = bds[i_ids]
+        else
+            q.inputs[:] = [bds[(o_ids[end]+1):end]; bds[1:(o_ids[1]-1)]]
+        end
+    end
+    if !isempty(o_ids)
+        if o_ids[end] - o_ids[1] + 1 == length(o_ids)
+            q.outputs[:] = bds[o_ids]
+        else
+            q.outputs[:] = [bds[(i_ids[end]+1):end]; bds[1:(i_ids[1]-1)]]
+        end
+        reverse!(q.outputs)
+    end
+    
     return q
 end
 

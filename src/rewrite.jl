@@ -1,3 +1,18 @@
+const rewrite_rules = [
+    :string_genus,
+    :yang_baxter_star,
+    :yang_baxter_triangle,
+    :charge_rm_v,
+    :charge_rm_f,
+    :z_fusion,
+    :x_fusion,
+    :perm_rz,
+    :identity,
+    :genus_fusion,
+    :swap_genus,
+]
+
+
 function rewrite!(tait::Tait, m::Match{:string_genus})
     rem_vertex!(tait, m.vertices[1])
     return tait
@@ -7,12 +22,11 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_star})
     hes = m.half_edges
     v0 = m.vertices[1]
     vs = [dst(tait, he) for he in hes]
-    fs = [face(tait, he) for he in hes]
     p1, p2, p3 = (phase(tait, he) for he in hes)
     q1, q2, q3 = yang_baxter_param_inv(p1, p2, p3)
-    add_edge!(tait, vs[1], vs[2], fs[1], q1)
-    add_edge!(tait, vs[1], vs[3], fs[3], q2)
-    add_edge!(tait, vs[2], vs[3], fs[2], q3)
+    add_edge!(tait, vs[1], vs[2], face(tait, hes[1]), q1)
+    add_edge!(tait, vs[1], vs[3], face(tait, hes[3]), q2)
+    add_edge!(tait, vs[2], vs[3], face(tait, hes[2]), q3)
     rem_vertex!(tait, v0; update = true)
     return tait
 end

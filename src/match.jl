@@ -86,7 +86,7 @@ function match!(matches, ::Rule{:charge_rm_v}, tait::Tait)
             end
         end
         if i1 === nothing
-            push!(matches, Match{:charge_rm_v}([v], hes))
+            !isempty(hes) && push!(matches, Match{:charge_rm_v}([v], hes))
             continue
         end
 

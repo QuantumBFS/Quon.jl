@@ -918,3 +918,44 @@ function tait_swap()
 
     return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
 end
+
+function tait_cnot(ctrl, loc)
+    z_copy = tait_copy()
+    x_copy = contract!(tait_hadamard(), tait_copy())
+    h = tait_hadamard()
+    for v in copy(x_copy.outputs)
+        contract!(x_copy, h, [v], copy(h.inputs))
+    end
+
+    if ctrl < loc
+        push!(x_copy.inputs, pop!(x_copy.outputs))
+        left, right = z_copy, x_copy
+    elseif ctrl > loc
+        push!(z_copy.inputs, pop!(z_copy.outputs))
+        left, right = x_copy, z_copy
+    else
+        error("`ctrl` and `loc` should be different")
+    end
+
+    s = tait_swap()
+    for _ in 1:(abs(ctrl - loc) - 1)
+        contract!(left, s, [left.outputs[end]], [s.inputs[1]])
+    end
+
+    return contract!(left, right, [left.outputs[end]], [right.inputs[1]])
+end
+
+function tait_cz(ctrl, loc)
+    @assert ctrl != loc
+    left = tait_copy()
+    right = tait_copy()
+    h = tait_hadamard()
+    contract!(left, h, [left.outputs[end]], copy(h.inputs))
+    push!(right.inputs, pop!(right.outputs))
+    s = tait_swap()
+    for _ in 1:(abs(ctrl - loc) - 1)
+        contract!(left, s, [left.outputs[end]], [s.inputs[1]])
+    end
+
+    return contract!(left, right, [left.outputs[end]], [right.inputs[1]])
+end
