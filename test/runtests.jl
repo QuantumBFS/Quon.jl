@@ -5,6 +5,10 @@ using Test
     include("utils/yang_baxter.jl")
 end
 
+@testset "yang-baxter-singular.jl" begin
+    include("yang-baxter-singular.jl")
+end
+
 @testset "graphs/tait.jl" begin
     include("graphs/tait.jl")
 end
