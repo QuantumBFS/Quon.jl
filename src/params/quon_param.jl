@@ -37,7 +37,7 @@ function add_with_dir(p1::QuonParam{T}, p2::QuonParam{T}, is_para::Bool) where T
 end
 
 add_parallel(p1::QuonParam{T}, p2::QuonParam{T}) where T = add_with_dir(p1, p2, true)
-add_perpendicular(p1::QuonParam{T}, p2::QuonParam{T}) where T = add_with_dir(p1, p2, false)
+add_orthorgonal(p1::QuonParam{T}, p2::QuonParam{T}) where T = add_with_dir(p1, p2, false)
 
 function change_direction(p::QuonParam{T}) where {T <: QuonComplex}
     new_param = change_direction(p.param)
@@ -69,11 +69,11 @@ is_inf_pi(p::Complex) = (real(p) == Inf)
 
 is_para_pi(p::QuonParam) = (is_parallel(p) && is_pi(p.param)) || 
     (!is_parallel(p) && is_inf_pi(p.param))
-is_perp_pi(p::QuonParam) = (!is_parallel(p) && is_pi(p.param)) || 
+is_orth_pi(p::QuonParam) = (!is_parallel(p) && is_pi(p.param)) || 
     (is_parallel(p) && is_inf_pi(p.param))
 is_para_zero(p::QuonParam) = (is_parallel(p) && is_zero(p.param)) || 
     (!is_parallel(p) && is_inf_zero(p.param))
-is_perp_zero(p::QuonParam) = (!is_parallel(p) && is_zero(p.param)) || 
+is_orth_zero(p::QuonParam) = (!is_parallel(p) && is_zero(p.param)) || 
     (is_parallel(p) && is_inf_zero(p.param))
 
 
@@ -86,11 +86,11 @@ is_para_half_pi(p::QuonParam) = (is_parallel(p) && is_half_pi(p.param)) ||
     (!is_parallel(p) && is_neg_half_pi(p.param))
 
 """
-    is_perp_half_pi(p)
+    is_orth_half_pi(p)
 
 Returns `true` if `p` ≈ `π/2 (⊥)` or `-π/2 (∥)`.
 """
-is_perp_half_pi(p::QuonParam) = (!is_parallel(p) && is_half_pi(p.param)) || 
+is_orth_half_pi(p::QuonParam) = (!is_parallel(p) && is_half_pi(p.param)) || 
     (is_parallel(p) && is_neg_half_pi(p.param))
 
 function yang_baxter_param(p1::QuonParam{T}, p2::QuonParam{T}, p3::QuonParam{T}) where {T <: QuonComplex}

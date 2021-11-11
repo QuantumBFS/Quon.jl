@@ -141,7 +141,7 @@ function match!(matches, ::Rule{:charge_rm_f}, tait::Tait)
             he = hes[i]
             if !is_open_half_edge(tait, he)
                 p = quon_param(tait, he)
-                if is_perp_pi(p)
+                if is_orth_pi(p)
                     push!(hes_match, he)
                     is_match = true
                     if he == hes[end]
@@ -215,7 +215,7 @@ end
 
 function match!(matches, ::Rule{:identity}, tait::Tait)
     for (he_id, theta) in tait.quon_params
-        if is_para_zero(theta) || is_perp_zero(theta)
+        if is_para_zero(theta) || is_orth_zero(theta)
             push!(matches, Match{:identity}([], [he_id]))
         end
     end
@@ -313,10 +313,10 @@ function check_swap_parameters(tait::Tait, v)
     any(is_open_half_edge(tait, he) for he in hes) && return false
     (p1, p2, p3, p4) = [quon_param(tait, he) for he in hes]
     if is_para_half_pi(p1) && is_para_half_pi(p3) && 
-        is_perp_half_pi(p2) && is_perp_half_pi(p4) 
+        is_orth_half_pi(p2) && is_orth_half_pi(p4) 
         return true
     elseif is_para_half_pi(p2) && is_para_half_pi(p4) && 
-        is_perp_half_pi(p1) && is_perp_half_pi(p3) 
+        is_orth_half_pi(p1) && is_orth_half_pi(p3) 
         return true
     end
     return false

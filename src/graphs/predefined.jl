@@ -206,6 +206,7 @@ end
 tait_rx(θ) = tait_rx(ComplexF64(θ))
 
 function tait_rz(θ::QuonComplex)
+    θ = to_quon_const(θ)
     g = planar_rz()
     p = QuonParam{QuonComplex}(θ, false)
     quon_params = Dict(7 => p, 8 => p)
@@ -325,9 +326,9 @@ function tait_id()
 end
 
 function tait_hadamard()
-    z1 = tait_rz(im*pi/2)
-    x = tait_rx(im*pi/2)
-    z2 = tait_rz(im*pi/2)
+    z1 = tait_rz(HalfPi)
+    x = tait_rx(HalfPi)
+    z2 = tait_rz(HalfPi)
     contract!(z1, x)
     contract!(z1, z2)
     z1.locations[13] = (0.0, 1.5)
@@ -857,42 +858,42 @@ end
 
 function tait_swap()
     g = planar_swap()
-    p_para = QuonParam{QuonComplex}(π/2*im, true)
-    p_prop = QuonParam{QuonComplex}(π/2*im, false)
+    p_para = QuonParam{QuonComplex}(HalfPi, true)
+    p_orth = QuonParam{QuonComplex}(HalfPi, false)
     quon_params = Dict{Int, QuonParam{QuonComplex}}(
         25 => p_para,
         26 => p_para,
-        27 => p_prop,
-        28 => p_prop,
+        27 => p_orth,
+        28 => p_orth,
         29 => p_para,
         30 => p_para,
-        31 => p_prop,
-        32 => p_prop,
+        31 => p_orth,
+        32 => p_orth,
 
-        33 => p_prop,
-        34 => p_prop,
+        33 => p_orth,
+        34 => p_orth,
         35 => p_para,
         36 => p_para,
-        37 => p_prop,
-        38 => p_prop,
+        37 => p_orth,
+        38 => p_orth,
         39 => p_para,
         40 => p_para,
 
         41 => p_para,
         42 => p_para,
-        43 => p_prop,
-        44 => p_prop,
+        43 => p_orth,
+        44 => p_orth,
         45 => p_para,
         46 => p_para,
-        47 => p_prop,
-        48 => p_prop,
+        47 => p_orth,
+        48 => p_orth,
 
-        49 => p_prop,
-        50 => p_prop,
+        49 => p_orth,
+        50 => p_orth,
         51 => p_para,
         52 => p_para,
-        53 => p_prop,
-        54 => p_prop,
+        53 => p_orth,
+        54 => p_orth,
         55 => p_para,
         56 => p_para,
     )

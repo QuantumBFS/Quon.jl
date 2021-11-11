@@ -98,7 +98,7 @@ function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:z_fusion}) where T
     twin2 = twin(tait, he2)
     p1 = quon_param(tait, he1)
     p2 = quon_param(tait, he2)
-    p = add_perpendicular(p1, p2)
+    p = add_orthorgonal(p1, p2)
     p0 = QuonParam{T}(zero(p2.param), false)
     tait.quon_params[he1] = p
     tait.quon_params[twin1] = p

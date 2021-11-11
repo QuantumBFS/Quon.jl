@@ -62,10 +62,10 @@ function check(tait::Tait, m::Match{:charge_rm_f})
     for i = 1:(lastindex(hes)-1)
         next(tait, hes[i]) == hes[i+1] || return false
         p = quon_param(tait, hes[i])
-        is_perp_pi(p) || return false
+        is_orth_pi(p) || return false
     end
     p_end = quon_param(tait, hes[end])
-    return is_perp_pi(p_end)
+    return is_orth_pi(p_end)
 end
 
 function check(tait::Tait, m::Match{:z_fusion})
@@ -110,7 +110,7 @@ end
 function check(tait::Tait, m::Match{:identity})
     has_subgraph(tait, m) || return false
     he = m.half_edges[1]
-    return is_para_zero(quon_param(tait, he)) || is_perp_zero(quon_param(tait, he))
+    return is_para_zero(quon_param(tait, he)) || is_orth_zero(quon_param(tait, he))
 end
 
 function check(tait::Tait, m::Match{:genus_fusion})
