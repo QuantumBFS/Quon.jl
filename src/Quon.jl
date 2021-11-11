@@ -20,8 +20,8 @@ export planar_rx, planar_rz, planar_id, planar_copy, planar_zero_state, planar_s
 
 include("utils/yang_baxter.jl")
 
-include("params/quon_param.jl")
 include("params/quon_const.jl")
+include("params/quon_param.jl")
 
 include("graphs/planar_multigraph.jl")
 include("graphs/tait.jl")

@@ -2,7 +2,11 @@
 
 const quon_atol = 1e-8
 
-change_direction(α) = log(-tanh(α/2))
+function change_direction(α::Complex)
+    is_zero(α) && return InfZero
+    is_pi(α) && return InfPi
+    return to_quon_const(log(-tanh(α/2)))
+end
 
 """
     yang_baxter_param(α1, β1, γ1)
@@ -21,8 +25,11 @@ Return α2, β2, γ2 according to the Yang-Baxter equation:
      /  \\     |       |     /  \\
     /    \\    |       |    /    \\
 """
-function yang_baxter_param(α1, β1, γ1)
+function yang_baxter_param(α1::Complex, β1::Complex, γ1::Complex)
     try
+        if all(p -> (p isa QuonConst), to_quon_const.([α1, β1, γ1]))
+            return yang_baxter_param(to_quon_const(α1), to_quon_const(β1), to_quon_const(γ1))
+        end
         s1 = (α1+γ1)/2
         m1 = (α1-γ1)/2
         if !isapprox(cosh(s1), 0; atol = quon_atol)
@@ -56,7 +63,7 @@ function yang_baxter_param(α1, β1, γ1)
             error("This case should not be handled here")
         end
         
-        return α2, β2, γ2
+        return to_quon_const(α2), to_quon_const(β2), to_quon_const(γ2)
     catch e
         # println(e)
         error("$((α1, β1, γ1)) is a singular point of Yang-Baxter equation")

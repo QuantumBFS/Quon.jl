@@ -2,19 +2,30 @@ using Printf
 
 abstract type AbstractQuonParam end
 
-mutable struct QuonParam{T <: Number} <: AbstractQuonParam
+mutable struct QuonParam{T} <: AbstractQuonParam
     param::T
     isparallel::Bool
 end
 
-function Base.show(io::IO, p::QuonParam)
+function Base.show(io::IO, p::QuonParam{T}) where T
     print(io, p.isparallel ? "∥ " : "⊥ ")
-    re = real(p.param)
-    ig = imag(p.param)
-    if !isapprox(re, 0; atol = quon_atol)
-        @printf(io, "%.3f + ", re)
+    if p isa Complex
+        re = real(p.param)
+        ig = imag(p.param)
+        if !isapprox(re, 0; atol = quon_atol)
+            @printf(io, "%.3f + ", re)
+        end
+        @printf(io, "%.3f⋅im", ig)
+    elseif p isa QuonConst
+        p === Zero && print(io, "0")
+        p === Pi && print(io, "π⋅im")
+        p === HalfPi && print(io, "π/2⋅im")
+        p === NegHalfPi && print(io, "-π/2⋅im")
+        p === InfZero && print(io, "CD(0)")
+        p === InfPi && print(io, "CD(π⋅im)")
+    else
+        print(io, p)
     end
-    @printf(io, "%.3f im", ig)
 end
 
 Base.copy(p::QuonParam{T}) where T = QuonParam{T}(p.param, p.isparallel)
@@ -35,19 +46,13 @@ function Base.:(+)(p1::QuonParam, p2::QuonParam)
     return QuonParam{typeof(new_param)}(new_param, new_ispara)
 end
 
-function change_direction(p::QuonParam)
+function change_direction(p::QuonParam{T}) where {T <: QuonComplex}
     new_param = change_direction(p.param)
     new_isparallel = !p.isparallel
-    return QuonParam{typeof(new_param)}(new_param, new_isparallel)
+    return QuonParam{T}(new_param, new_isparallel)
 end
 
-function is_singular_change_direction(p::QuonParam)
-    (real(p.param) ≈ 0 && rem(imag(p.param), pi, RoundNearest) ≈ 0) && return true
-    return false
-end
-
-function is_singular_yang_baxter(p1::QuonParam, p2::QuonParam, p3::QuonParam)
-    any(is_singular_change_direction(p) for p in (p1, p2, p3)) && return true
+function is_singular_yang_baxter(p1::QuonParam{T}, p2::QuonParam{T}, p3::QuonParam{T}) where {T <:QuonComplex}
     try
         yang_baxter_param(p1, p2, p3)
     catch e
@@ -56,102 +61,63 @@ function is_singular_yang_baxter(p1::QuonParam, p2::QuonParam, p3::QuonParam)
     return false
 end
 
-# function update_yang_baxter_triangle(p1, p2, p3)
-#     q1, q2, q3 = copy(p1), copy(p2), copy(p3)
-#     if is_pi(p1) && !p1.isparallel
-#         if is_pi(p2) && !p2.isparallel
-#             q1.param = zero(p1.param)
-#             q2.param = zero(p2.param)
-#             if is_pi(p3) && !p3.isparallel
-#                 q3.param = zero(q3.param)
-#             else
-#                 q3 = q3 + QuonParam(pi*im, false)
-#             end
-#         elseif is_pi(p3) && !p3.isparallel
-#             q1.param = zero(p1.param)
-#             q3.param = zero(p3.param)
-#             q2 = q2 + QuonParam(pi*im, false)
-#         end
-#     elseif is_pi(p2) && !p2.isparallel && is_pi(p3) && !p3.isparallel
-#         q2.param = zero(p1.param)
-#         q3.param = zero(p3.param)
-#         q1 = q1 + QuonParam(pi*im, false)
-#     end
-#     return q1, q2, q3
-# end
-# function update_yang_baxter_star(p1, p2, p3)
-#     q1, q2, q3 = p1, p2, p3
-#     if is_pi(p1) && p1.isparallel
-#         if is_pi(p2) && p2.isparallel
-#             q1.param = zero(p1.param)
-#             q2.param = zero(p2.param)
-#             if is_pi(p3) && p3.isparallel
-#                 q3.param = zero(q3.param)
-#             else
-#                 q3 = q3 + QuonParam(pi*im, true)
-#             end
-#         elseif is_pi(p3) && p3.isparallel
-#             q1.param = zero(p1.param)
-#             q3.param = zero(p3.param)
-#             q2 = q2 + QuonParam(pi*im, true)
-#         end
-#     elseif is_pi(p2) && p2.isparallel && is_pi(p3) && p3.isparallel
-#         q2.param = zero(p1.param)
-#         q3.param = zero(p3.param)
-#         q1 = q1 + QuonParam(pi*im, true)
-#     end
-#     return q1, q2, q3
-# end
-
 is_parallel(p::QuonParam) = p.isparallel
 
-is_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
-    isapprox(rem(imag(p.param)+pi, 2pi, RoundNearest), 0, atol = atol))
-is_zero(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
-    isapprox(rem(imag(p.param), 2pi, RoundNearest), 0, atol = atol))
-is_half_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
-    isapprox(rem(imag(p.param), 2pi, RoundNearest), π/2, atol = atol))
-is_minus_half_pi(p::QuonParam; atol = quon_atol) = (isapprox(real(p.param), 0, atol = atol) && 
-    isapprox(rem(imag(p.param), 2pi, RoundNearest), -π/2, atol = atol))
+is_pi(p::Complex; atol = quon_atol) = (isapprox(real(p), 0, atol = atol) && 
+    isapprox(rem(imag(p)+pi, 2pi, RoundNearest), 0, atol = atol))
+is_zero(p::Complex; atol = quon_atol) = (isapprox(real(p), 0, atol = atol) && 
+    isapprox(rem(imag(p), 2pi, RoundNearest), 0, atol = atol))
+is_half_pi(p::Complex; atol = quon_atol) = (isapprox(real(p), 0, atol = atol) && 
+    isapprox(rem(imag(p), 2pi, RoundNearest), π/2, atol = atol))
+is_neg_half_pi(p::Complex; atol = quon_atol) = (isapprox(real(p), 0, atol = atol) && 
+    isapprox(rem(imag(p), 2pi, RoundNearest), -π/2, atol = atol))
+is_inf_zero(p::Complex) = (real(p) == -Inf)
+is_inf_pi(p::Complex) = (real(p) == Inf)
 
-is_para_pi(p::QuonParam) = is_parallel(p) && is_pi(p)
-is_perp_pi(p::QuonParam) = !is_parallel(p) && is_pi(p)
+is_para_pi(p::QuonParam) = (is_parallel(p) && is_pi(p)) || (!is_parallel(p) && is_inf_pi(p))
+is_perp_pi(p::QuonParam) = (!is_parallel(p) && is_pi(p)) || (is_parallel(p) && is_inf_pi(p))
 is_para_zero(p::QuonParam) = is_parallel(p) && is_zero(p)
 is_perp_zero(p::QuonParam) = !is_parallel(p) && is_zero(p)
 
 
 """
-    is_para_half_pi(p; atol = atol)
+    is_para_half_pi(p)
 
 Returns `true` if `p` ≈ `π/2 (∥)` or `-π/2 (⊥)`.
 """
-is_para_half_pi(p::QuonParam; atol = quon_atol) = (p.isparallel && is_half_pi(p; atol = atol)) || 
-    (!p.isparallel && is_minus_half_pi(p; atol = atol))
+is_para_half_pi(p::QuonParam) = (is_parallel(p) && is_half_pi(p)) || 
+    (!is_parallel(p) && is_neg_half_pi(p))
 
 """
-    is_perp_half_pi(p; atol = atol)
+    is_perp_half_pi(p)
 
 Returns `true` if `p` ≈ `π/2 (⊥)` or `-π/2 (∥)`.
 """
-is_perp_half_pi(p::QuonParam; atol = quon_atol) = (!p.isparallel && is_half_pi(p; atol = atol)) || 
-    (p.isparallel && is_minus_half_pi(p; atol = atol))
+is_perp_half_pi(p::QuonParam) = (!is_parallel(p) && is_half_pi(p)) || 
+    (is_parallel(p) && is_neg_half_pi(p))
 
-function yang_baxter_param(p1::QuonParam, p2::QuonParam, p3::QuonParam)
+function yang_baxter_param(p1::QuonParam{T}, p2::QuonParam{T}, p3::QuonParam{T}) where {T <: QuonComplex}
     # triangle => star
-    p1.isparallel && (p1 = change_direction(p1))
-    !p2.isparallel && (p2 = change_direction(p2))
-    p3.isparallel && (p3 = change_direction(p3))
+    is_parallel(p1) && (p1 = change_direction(p1))
+    !is_parallel(p2) && (p2 = change_direction(p2))
+    is_parallel(p3) && (p3 = change_direction(p3))
     
     q1_param, q2_param, q3_param = yang_baxter_param(p1.param, p2.param, p3.param)
-    q1, q2, q3 = QuonParam(q1_param, true), QuonParam(q2_param, false), QuonParam(q3_param, true)
+    q1_param = to_quon_const(q1_param)
+    q2_param = to_quon_const(q2_param)
+    q3_param = to_quon_const(q3_param)
+    q1, q2, q3 = QuonParam{T}(q1_param, true), QuonParam{T}(q2_param, false), QuonParam{T}(q3_param, true)
     return q1, q2, q3
 end
-function yang_baxter_param_inv(p1::QuonParam, p2::QuonParam, p3::QuonParam)
+function yang_baxter_param_inv(p1::QuonParam{T}, p2::QuonParam{T}, p3::QuonParam{T}) where {T <: QuonComplex}
     # star => triangle
-    !p1.isparallel && (p1 = change_direction(p1))
-    p2.isparallel && (p2 = change_direction(p2))
-    !p3.isparallel && (p3 = change_direction(p3))
+    !is_parallel(p1) && (p1 = change_direction(p1))
+    is_parallel(p2) && (p2 = change_direction(p2))
+    !is_parallel(p3) && (p3 = change_direction(p3))
 
     q1_param, q2_param, q3_param = yang_baxter_param_inv(p1.param, p2.param, p3.param)
-    return QuonParam(q1_param, false), QuonParam(q2_param, true), QuonParam(q3_param, false)
+    q1_param = to_quon_const(q1_param)
+    q2_param = to_quon_const(q2_param)
+    q3_param = to_quon_const(q3_param)
+    return QuonParam{T}(q1_param, false), QuonParam{T}(q2_param, true), QuonParam{T}(q3_param, false)
 end
