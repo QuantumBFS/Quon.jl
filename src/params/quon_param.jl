@@ -9,42 +9,35 @@ end
 
 function Base.show(io::IO, p::QuonParam{T}) where T
     print(io, p.isparallel ? "∥ " : "⊥ ")
-    if p isa Complex
+    if p.param isa Complex
         re = real(p.param)
         ig = imag(p.param)
         if !isapprox(re, 0; atol = quon_atol)
             @printf(io, "%.3f + ", re)
         end
         @printf(io, "%.3f⋅im", ig)
-    elseif p isa QuonConst
-        p === Zero && print(io, "0")
-        p === Pi && print(io, "π⋅im")
-        p === HalfPi && print(io, "π/2⋅im")
-        p === NegHalfPi && print(io, "-π/2⋅im")
-        p === InfZero && print(io, "CD(0)")
-        p === InfPi && print(io, "CD(π⋅im)")
+    elseif p.param isa QuonConst
+        p.param === Zero && print(io, "0")
+        p.param === Pi && print(io, "π⋅im")
+        p.param === HalfPi && print(io, "π/2⋅im")
+        p.param === NegHalfPi && print(io, "-π/2⋅im")
+        p.param === InfZero && print(io, "CD(0)")
+        p.param === InfPi && print(io, "CD(π⋅im)")
     else
-        print(io, p)
+        print(io, p.param)
     end
 end
 
 Base.copy(p::QuonParam{T}) where T = QuonParam{T}(p.param, p.isparallel)
 
-function Base.:(+)(p1::QuonParam, p2::QuonParam)
-    if p1.isparallel == p2.isparallel
-        new_param = p1.param + p2.param
-        new_ispara = p1.isparallel
-    elseif !isinf(change_direction(p1.param))
-        new_param = change_direction(p1.param) + p2.param
-        new_ispara = p2.isparallel
-    elseif !isinf(change_direction(p2.param))
-        new_param = p1.param + change_direction(p2.param)
-        new_ispara = p1.isparallel
-    else
-        return !p1.isparallel ? p1 : p2
-    end
-    return QuonParam{typeof(new_param)}(new_param, new_ispara)
+function add_with_dir(p1::QuonParam{T}, p2::QuonParam{T}, is_para::Bool) where T
+    is_parallel(p1) === is_para || (p1 = change_direction(p1))
+    is_parallel(p2) === is_para || (p2 = change_direction(p1))
+    return QuonParam{T}(p1.param + p2.param, is_para)
 end
+
+add_parallel(p1::QuonParam{T}, p2::QuonParam{T}) where T = add_with_dir(p1, p2, true)
+add_perpendicular(p1::QuonParam{T}, p2::QuonParam{T}) where T = add_with_dir(p1, p2, false)
 
 function change_direction(p::QuonParam{T}) where {T <: QuonComplex}
     new_param = change_direction(p.param)
@@ -74,10 +67,14 @@ is_neg_half_pi(p::Complex; atol = quon_atol) = (isapprox(real(p), 0, atol = atol
 is_inf_zero(p::Complex) = (real(p) == -Inf)
 is_inf_pi(p::Complex) = (real(p) == Inf)
 
-is_para_pi(p::QuonParam) = (is_parallel(p) && is_pi(p)) || (!is_parallel(p) && is_inf_pi(p))
-is_perp_pi(p::QuonParam) = (!is_parallel(p) && is_pi(p)) || (is_parallel(p) && is_inf_pi(p))
-is_para_zero(p::QuonParam) = is_parallel(p) && is_zero(p)
-is_perp_zero(p::QuonParam) = !is_parallel(p) && is_zero(p)
+is_para_pi(p::QuonParam) = (is_parallel(p) && is_pi(p.param)) || 
+    (!is_parallel(p) && is_inf_pi(p.param))
+is_perp_pi(p::QuonParam) = (!is_parallel(p) && is_pi(p.param)) || 
+    (is_parallel(p) && is_inf_pi(p.param))
+is_para_zero(p::QuonParam) = (is_parallel(p) && is_zero(p.param)) || 
+    (!is_parallel(p) && is_inf_zero(p.param))
+is_perp_zero(p::QuonParam) = (!is_parallel(p) && is_zero(p.param)) || 
+    (is_parallel(p) && is_inf_zero(p.param))
 
 
 """
@@ -85,16 +82,16 @@ is_perp_zero(p::QuonParam) = !is_parallel(p) && is_zero(p)
 
 Returns `true` if `p` ≈ `π/2 (∥)` or `-π/2 (⊥)`.
 """
-is_para_half_pi(p::QuonParam) = (is_parallel(p) && is_half_pi(p)) || 
-    (!is_parallel(p) && is_neg_half_pi(p))
+is_para_half_pi(p::QuonParam) = (is_parallel(p) && is_half_pi(p.param)) || 
+    (!is_parallel(p) && is_neg_half_pi(p.param))
 
 """
     is_perp_half_pi(p)
 
 Returns `true` if `p` ≈ `π/2 (⊥)` or `-π/2 (∥)`.
 """
-is_perp_half_pi(p::QuonParam) = (!is_parallel(p) && is_half_pi(p)) || 
-    (is_parallel(p) && is_neg_half_pi(p))
+is_perp_half_pi(p::QuonParam) = (!is_parallel(p) && is_half_pi(p.param)) || 
+    (is_parallel(p) && is_neg_half_pi(p.param))
 
 function yang_baxter_param(p1::QuonParam{T}, p2::QuonParam{T}, p3::QuonParam{T}) where {T <: QuonComplex}
     # triangle => star

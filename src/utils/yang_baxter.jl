@@ -65,7 +65,6 @@ function yang_baxter_param(α1::Complex, β1::Complex, γ1::Complex)
         
         return to_quon_const(α2), to_quon_const(β2), to_quon_const(γ2)
     catch e
-        # println(e)
         error("$((α1, β1, γ1)) is a singular point of Yang-Baxter equation")
     end
 end

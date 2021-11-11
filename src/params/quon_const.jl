@@ -9,15 +9,6 @@ end
 
 const QuonComplex = Union{QuonConst, ComplexF64}
 
-function change_direction(p::QuonConst)
-    p === Zero && return InfZero
-    p === InfZero && return Zero
-    p === Pi && return InfPi
-    p === InfPi && return Pi
-    p === HalfPi && return NegHalfPi
-    p === NegHalfPi && return HalfPi
-end
-
 function Base.Complex(p::QuonConst)
     p === Zero && return 0.0im
     p === Pi && return π*im
@@ -65,6 +56,20 @@ function Base.:(+)(p1::Complex, p2::QuonConst)
     return p2
 end
 Base.:(+)(p1::QuonConst, p2::Complex) = p2 + p1
+
+Base.zero(::QuonConst) = Zero
+Base.zero(::Type{QuonConst}) = Zero
+Base.zero(::Type{QuonComplex}) = Zero
+
+function change_direction(p::QuonConst)
+    p === Zero && return InfZero
+    p === InfZero && return Zero
+    p === Pi && return InfPi
+    p === InfPi && return Pi
+    p === HalfPi && return NegHalfPi
+    p === NegHalfPi && return HalfPi
+end
+
 
 is_pi(p::QuonConst) = (p === Pi)
 is_zero(p::QuonConst) = (p == Zero)
