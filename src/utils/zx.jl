@@ -1,12 +1,12 @@
 using Multigraphs: Multigraph
 import ZXCalculus
-using ZXCalculus: ZXDiagram, SpiderType, add_spider!
+using ZXCalculus: ZXDiagram, SpiderType, add_spider!, Phase
 
 function ZXCalculus.ZXDiagram(nin::Integer, nout::Integer)
     N = nin + nout
     mg = Multigraph(nin + nout)
     st = vcat([SpiderType.In for _ = 1:nin], [SpiderType.Out for _ = 1:nout])
-    ps = [ZXCalculus.Phase(0//1) for _ = 1:N]
+    ps = [Phase(0//1) for _ = 1:N]
     zxd = ZXDiagram(mg, st, ps)
     sort!(zxd.inputs)
     sort!(zxd.outputs)
@@ -42,25 +42,66 @@ function ZXCalculus.ZXDiagram(q::Tait)
                 p = quon_param(q, he)
                 if is_genus(q, s) || is_genus(q, d)
                     v_z = v_map[is_genus(q, s) ? d : s]
-                    if !is_parallel(p)
-                        zxd.ps[v_z] += imag(p.param) / pi
-                        he_map[he] = v_z
-                        he_map[he_twin] = v_z
-                    else
-                        v_x = add_spider!(zxd, SpiderType.X, ZXCalculus.Phase(imag(p.param) / pi), [v_z])
-                        he_map[he] = v_x
-                        he_map[he_twin] = v_x
+                    if real(p.param) == 0
+                        if !is_parallel(p)
+                            zxd.ps[v_z] += imag(p.param) / pi
+                            he_map[he] = v_z
+                            he_map[he_twin] = v_z
+                        else
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(imag(p.param) / pi), [v_z])
+                            he_map[he] = v_x
+                            he_map[he_twin] = v_x
+                        end
+                    else    # the parameter is not pure imag number
+                        p1 = QuonParam{QuonComplex}(real(p.param) + pi/2*im, is_parallel(p))
+                        p2 = QuonParam{QuonComplex}(imag(p.param) - pi/2*im, is_parallel(p))
+                        p1 = change_direction(p1)
+                        if !is_parallel(p1)
+                            zxd.ps[v_z] += imag(p1.param) / pi
+                            he_map[he] = v_z
+                            he_map[he_twin] = v_z
+                        else
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(imag(p1.param) / pi), [v_z])
+                            he_map[he] = v_x
+                            he_map[he_twin] = v_x
+                        end
+                        if !is_parallel(p2)
+                            zxd.ps[v_z] += imag(p2.param) / pi
+                            he_map[he] = v_z
+                            he_map[he_twin] = v_z
+                        else
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(imag(p2.param) / pi), [v_z])
+                            he_map[he] = v_x
+                            he_map[he_twin] = v_x
+                        end
                     end
                 else
-                    if is_parallel(p)
-                        v_x = add_spider!(zxd, SpiderType.X, ZXCalculus.Phase(imag(p.param) / pi), [v_map[s], v_map[d]])
-                        he_map[he] = v_x
-                        he_map[he_twin] = v_x
-                    else
-                        v_x = add_spider!(zxd, SpiderType.X, ZXCalculus.Phase(0//1), [v_map[s], v_map[d]])
-                        v_z = add_spider!(zxd, SpiderType.Z, ZXCalculus.Phase(imag(p.param) / pi), [v_x])
-                        he_map[he] = v_z
-                        he_map[he_twin] = v_z
+                    if real(p.param) == 0
+                        if is_parallel(p)
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(imag(p.param) / pi), [v_map[s], v_map[d]])
+                            he_map[he] = v_x
+                            he_map[he_twin] = v_x
+                        else
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(0//1), [v_map[s], v_map[d]])
+                            v_z = add_spider!(zxd, SpiderType.Z, Phase(imag(p.param) / pi), [v_x])
+                            he_map[he] = v_z
+                            he_map[he_twin] = v_z
+                        end
+                    else    # the parameter is not pure imag number
+                        p1 = QuonParam{QuonComplex}(real(p.param) + pi/2*im, is_parallel(p))
+                        p2 = QuonParam{QuonComplex}(imag(p.param) - pi/2*im, is_parallel(p))
+                        p1 = change_direction(p1)
+                        if is_parallel(p1)
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(imag(p1.param) / pi), [v_map[s], v_map[d]])
+                            v_z = add_spider!(zxd, SpiderType.Z, Phase(imag(p2.param) / pi), [v_x])
+                            he_map[he] = v_x
+                            he_map[he_twin] = v_x
+                        else
+                            v_x = add_spider!(zxd, SpiderType.X, Phase(imag(p2.param) / pi), [v_map[s], v_map[d]])
+                            v_z = add_spider!(zxd, SpiderType.Z, Phase(imag(p1.param) / pi), [v_x])
+                            he_map[he] = v_z
+                            he_map[he_twin] = v_z
+                        end
                     end
                 end
             else
