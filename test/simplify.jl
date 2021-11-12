@@ -1,0 +1,83 @@
+using Quon
+using Test
+
+function apply_first_match!(r, q)
+    ms = match(r, q)
+    isempty(ms) && (return q)
+    m = first(ms)
+    Quon.rewrite!(q, m)
+    return q
+end
+
+@testset "Genus in Yang-Baxter Eq" begin
+    q = Tait(2)
+    push_gate!(q, Val(:CZ), 1, 2)
+    push_gate!(q, Val(:CZ), 1, 2)
+
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    @test length(match(Quon.Rule(:yang_baxter_star), q)) == 0
+end
+
+@testset "add_edge" begin
+    q = Tait(2)
+    push_gate!(q, Val(:CZ), 1, 2)
+    push_gate!(q, Val(:CZ), 1, 2)
+
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:x_fusion), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_star), q)
+    apply_first_match!(Quon.Rule(:yang_baxter_triangle), q)
+    apply_first_match!(Quon.Rule(:identity), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    apply_first_match!(Quon.Rule(:perm_rz), q)
+    @test true
+end
