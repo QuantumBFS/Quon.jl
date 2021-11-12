@@ -15,7 +15,7 @@ function check(tait::Tait, m::Match{:yang_baxter_star})
     has_subgraph(tait, m) || return false
     v = m.vertices[1]
 
-    is_open_vertex(tait, v) && return false
+    (is_open_vertex(tait, v) || is_genus(tait, v)) && return false
     hes = trace_vertex(tait, v)
     if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
         return Set(hes) == Set(m.half_edges)

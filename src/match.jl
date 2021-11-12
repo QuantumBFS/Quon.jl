@@ -44,7 +44,7 @@ end
 
 function match!(matches, ::Rule{:yang_baxter_star}, tait::Tait)
     for v in vertices(tait)
-        is_open_vertex(tait, v) && continue
+        (is_open_vertex(tait, v) || is_genus(tait, v)) && continue
         hes = trace_vertex(tait, v)
         if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
             push!(matches, Match{:yang_baxter_star}([v], hes))
