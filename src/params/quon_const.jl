@@ -60,6 +60,13 @@ Base.:(+)(p1::QuonConst, p2::Complex) = p2 + p1
 Base.zero(::QuonConst) = Zero
 Base.zero(::Type{QuonConst}) = Zero
 Base.zero(::Type{QuonComplex}) = Zero
+function Base.imag(p::QuonConst)
+    p === Pi && return pi
+    p === HalfPi && return pi/2
+    p === NegHalfPi && return -pi/2
+    return 0.0
+end
+Base.real(p::QuonConst) = real(Complex(p))
 
 function change_direction(p::QuonConst)
     p === Zero && return InfZero

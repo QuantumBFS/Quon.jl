@@ -116,7 +116,6 @@ function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:x_fusion}) where T
     p2 = quon_param(tait, he2)
     p = add_parallel(p1, p2)
     p0 = QuonParam{T}(zero(p2.param), true)
-    @show typeof(p0)
     tait.quon_params[he1] = p
     tait.quon_params[twin1] = p
     tait.quon_params[he2] = p0

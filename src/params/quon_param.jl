@@ -31,8 +31,8 @@ end
 Base.copy(p::QuonParam{T}) where T = QuonParam{T}(p.param, p.isparallel)
 
 function add_with_dir(p1::QuonParam{T}, p2::QuonParam{T}, is_para::Bool) where T
-    is_parallel(p1) === is_para || (p1 = change_direction(p1))
-    is_parallel(p2) === is_para || (p2 = change_direction(p1))
+    is_parallel(p1) == is_para || (p1 = change_direction(p1))
+    is_parallel(p2) == is_para || (p2 = change_direction(p2))
     return QuonParam{T}(p1.param + p2.param, is_para)
 end
 
