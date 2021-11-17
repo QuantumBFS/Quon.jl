@@ -17,8 +17,11 @@ function check(tait::Tait, m::Match{:yang_baxter_star})
 
     (is_open_vertex(tait, v) || is_genus(tait, v)) && return false
     hes = trace_vertex(tait, v)
-    if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
-        return Set(hes) == Set(m.half_edges)
+    if length(hes) == 3 
+        nbs = Set(dst(tait, he) for he in hes)
+        if length(nbs) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
+            return Set(hes) == Set(m.half_edges)
+        end
     end
     return false
 end

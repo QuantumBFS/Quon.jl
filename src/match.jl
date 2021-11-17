@@ -1,13 +1,7 @@
 struct Match{R}
-    # TODO: do we need the `parent`
-    # parent::Tait{P}
     vertices::Vector{Int}
     half_edges::Vector{Int} # half edge id
 end
-
-# function Match{R}(parent::Tait{P}, vertices, half_edges) where {R, P}
-#     Match{R, P}(parent, vertices, half_edges)
-# end
 
 function Base.show(io::IO, m::Match)
     print(io, "Match:")
@@ -46,8 +40,11 @@ function match!(matches, ::Rule{:yang_baxter_star}, tait::Tait)
     for v in vertices(tait)
         (is_open_vertex(tait, v) || is_genus(tait, v)) && continue
         hes = trace_vertex(tait, v)
-        if length(hes) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
-            push!(matches, Match{:yang_baxter_star}([v], hes))
+        if length(hes) == 3
+            nbs = Set(dst(tait, he) for he in hes)
+            if length(nbs) == 3 && all(x->!is_open_vertex(tait, dst(tait, x)), hes)
+                push!(matches, Match{:yang_baxter_star}([v], hes))
+            end
         end
     end
     return matches
