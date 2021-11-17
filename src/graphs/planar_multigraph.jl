@@ -389,10 +389,8 @@ function add_edge!(g::PlanarMultigraph, v1::Integer, v2::Integer, f::Integer)
     hes_f = trace_face(g, f)
     he1_in, he1_out, he2_in, he2_out = (0,0,0,0)
     for he in hes_f
-        dst(g, he) == v1 && (he1_in = he)
-        src(g, he) == v1 && (he1_out = he)
-        dst(g, he) == v2 && (he2_in = he)
-        src(g, he) == v2 && (he2_out = he)
+        dst(g, he) == v1 && (he1_in = he; he1_out = next(g, he))
+        dst(g, he) == v2 && (he2_in = he; he2_out = next(g, he))
     end
     he1_in * he1_out * he2_in * he2_out != 0 || return (0, 0)
     new_he1 = g.he_max + 1

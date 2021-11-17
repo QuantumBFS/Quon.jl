@@ -28,9 +28,16 @@ function ZXCalculus.push_gate!(q::Tait, ::Val{:Rx}, loc, p)
     return q
 end
 
-function ZXCalculus.push_gate!(q::Tait, ::Val{:SWAP}, loc1, loc)
+function ZXCalculus.push_gate!(q::Tait, ::Val{:SWAP}, loc1, loc2)
+    l1, l2 = (min(loc1, loc2), max(loc1, loc2))
     g = tait_swap()
-    # contract!(q, g, [q.])
+    for i = l1:(l2-1)
+        contract!(q, g, q.outputs[i:i+1], copy(g.inputs))
+    end
+    for i = (l2-2):-1:l1
+        contract!(q, g, q.outputs[i:i+1], copy(g.inputs))
+    end
+    return q
 end
 
 function ZXCalculus.push_gate!(q::Tait, ::Val{:CNOT}, loc, ctrl)

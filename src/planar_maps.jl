@@ -151,7 +151,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
             locs[v] = (he_locs[he][1]*scale, he_locs[he][2]*scale)
             v_src = v_map[src(q, he)]
             v_dst = v_map[dst(q, he)]
-            vrots[v] = angle((locs[v_src][1] - locs[v_dst][1]) - im * (locs[v_src][2] - locs[v_dst][2]))
+            vrots[v] = angle(-(locs[v_src][1] - locs[v_dst][1]) + im * (locs[v_src][2] - locs[v_dst][2]))
             if is_open_half_edge(q, he)
                 vfill[v] = "transparent"
                 vstroke[v] = "transparent"
@@ -161,7 +161,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
                 vfill[v] = "gray"
                 vstroke[v] = "gray"
                 vsize[v] = 0.04/scale
-                vlabel[v] = "-$he→\n$(phase(q, he))\n←$(twin(q, he))-"
+                vlabel[v] = "-$he→\n$(quon_param(q, he))\n←$(twin(q, he))-"
             end
             tfill[v] = "black"
             tsize[v] = 5/scale*pt
@@ -180,7 +180,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
             vfill[v2] = "gray"
             vstroke[v1] = "gray"
             vstroke[v2] = "gray"
-            vrots[v1] = angle((locs[v1][1] - locs[v2][1]) - im * (locs[v1][2] - locs[v2][2]))
+            vrots[v1] = angle(-(locs[v1][1] - locs[v2][1]) + im * (locs[v1][2] - locs[v2][2]))
             vrots[v2] = 0.0
             if is_open_half_edge(q, he1)
                 vfill[v1] = "transparent"
@@ -197,7 +197,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
                 vstroke[v1] = "gray"
                 vstroke[v2] = "gray"
                 vsize[v1] = 0.04/scale
-                vlabel[v1] = "-$he→\n$(phase(q, he))\n←$(twin(q, he))-"
+                vlabel[v1] = "-$he→\n$(quon_param(q, he))\n←$(twin(q, he))-"
                 vsize[v2] = 0
                 vlabel[v2] = ""
             end
@@ -222,7 +222,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
         locs[v_max] = ((locs[v1][1] + locs[v2][1])/2, (locs[v1][2] + locs[v2][2])/2)
         tfill[v_max] = "black"
         tsize[v_max] = 5/scale*pt
-        vrots[v_max] = angle((locs[v1][1] - locs[v2][1]) - im * (locs[v1][2] - locs[v2][2]))
+        vrots[v_max] = angle(-(locs[v1][1] - locs[v2][1]) + im * (locs[v1][2] - locs[v2][2]))
         if is_open_half_edge(q, he)
             vfill[v_max] = "transparent"
             vstroke[v_max] = "transparent"
@@ -232,7 +232,7 @@ function plot_planar(q::Tait; scale = 1, kwargs...)
             vfill[v_max] = "gray"
             vstroke[v_max] = "gray"
             vsize[v_max] = 0.04/scale
-            vlabel[v_max] = "-$(he)→\n$(phase(q, he))\n←$(twin(q, he))-"
+            vlabel[v_max] = "-$(he)→\n$(quon_param(q, he))\n←$(twin(q, he))-"
         end
     end
 

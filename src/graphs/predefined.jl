@@ -184,10 +184,11 @@ function planar_rz()
     return rz
 end
 
-function tait_rx(θ::T) where T
+function tait_rx(θ::QuonComplex)
+    θ = to_quon_const(θ)
     g = planar_rx()
-    p = Phase(θ, true)
-    phases = Dict(7 => p, 8 => p)
+    p = QuonParam{QuonComplex}(θ, true)
+    quon_params = Dict(7 => p, 8 => p)
     inputs = Int[1]
     outputs = Int[6]
     genuses = Set([2, 5])
@@ -200,13 +201,15 @@ function tait_rx(θ::T) where T
         6 => (1.0, 3.0),
     )
 
-    return Tait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{QuonParam{QuonComplex}}(g, quon_params, inputs, outputs, genuses, locations)
 end
+tait_rx(θ) = tait_rx(ComplexF64(θ))
 
-function tait_rz(θ::T) where T
+function tait_rz(θ::QuonComplex)
+    θ = to_quon_const(θ)
     g = planar_rz()
-    p = Phase(θ, false)
-    phases = Dict(7 => p, 8 => p)
+    p = QuonParam{QuonComplex}(θ, false)
+    quon_params = Dict(7 => p, 8 => p)
     inputs = Int[1]
     outputs = Int[5]
     genuses = Set([2, 4])
@@ -218,8 +221,9 @@ function tait_rz(θ::T) where T
         5 => (1.0, 2.0),
     )
 
-    return Tait{Phase{T}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{QuonParam{QuonComplex}}(g, quon_params, inputs, outputs, genuses, locations)
 end
+tait_rz(θ) = tait_rz(ComplexF64(θ))
 
 function planar_id()
     v2he = Dict{Int, Int}(
@@ -306,7 +310,7 @@ end
 
 function tait_id()
     g = planar_id()
-    phases = Dict{Int, Phase{ComplexF64}}()
+    quon_params = Dict{Int, QuonParam{QuonComplex}}()
     inputs = Int[1]
     outputs = Int[5]
     genuses = Set([2, 4])
@@ -318,13 +322,13 @@ function tait_id()
         5 => (1.0, 2.0),
     )
 
-    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{QuonParam{QuonComplex}}(g, quon_params, inputs, outputs, genuses, locations)
 end
 
 function tait_hadamard()
-    z1 = tait_rz(im*pi/2)
-    x = tait_rx(im*pi/2)
-    z2 = tait_rz(im*pi/2)
+    z1 = tait_rz(HalfPi)
+    x = tait_rx(HalfPi)
+    z2 = tait_rz(HalfPi)
     contract!(z1, x)
     contract!(z1, z2)
     z1.locations[13] = (0.0, 1.5)
@@ -446,7 +450,7 @@ end
 
 function tait_copy()
     g = planar_copy()
-    phases = Dict{Int, Phase{ComplexF64}}()
+    quon_params = Dict{Int, QuonParam{QuonComplex}}()
     inputs = Int[1]
     outputs = Int[2, 3]
     genuses = Set([4, 5, 6])
@@ -460,7 +464,7 @@ function tait_copy()
         7 => (1.0, 1.0),
     )
 
-    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{QuonParam{QuonComplex}}(g, quon_params, inputs, outputs, genuses, locations)
 end
 
 function tait_cz()
@@ -539,7 +543,7 @@ end
 
 function tait_zero_state()
     g = planar_zero_state()
-    phases = Dict{Int, Phase{ComplexF64}}()
+    quon_params = Dict{Int, QuonParam{QuonComplex}}()
     inputs = Int[]
     outputs = Int[2]
     genuses = Set([1])
@@ -548,7 +552,7 @@ function tait_zero_state()
         2 => (1.0, 1.0),
     )
 
-    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{QuonParam{QuonComplex}}(g, quon_params, inputs, outputs, genuses, locations)
 end
 
 function planar_swap()
@@ -854,42 +858,42 @@ end
 
 function tait_swap()
     g = planar_swap()
-    p_para = Phase(π/2*im, true)
-    p_prop = Phase(π/2*im, false)
-    phases = Dict{Int, Phase{ComplexF64}}(
+    p_para = QuonParam{QuonComplex}(HalfPi, true)
+    p_orth = QuonParam{QuonComplex}(HalfPi, false)
+    quon_params = Dict{Int, QuonParam{QuonComplex}}(
         25 => p_para,
         26 => p_para,
-        27 => p_prop,
-        28 => p_prop,
+        27 => p_orth,
+        28 => p_orth,
         29 => p_para,
         30 => p_para,
-        31 => p_prop,
-        32 => p_prop,
+        31 => p_orth,
+        32 => p_orth,
 
-        33 => p_prop,
-        34 => p_prop,
+        33 => p_orth,
+        34 => p_orth,
         35 => p_para,
         36 => p_para,
-        37 => p_prop,
-        38 => p_prop,
+        37 => p_orth,
+        38 => p_orth,
         39 => p_para,
         40 => p_para,
 
         41 => p_para,
         42 => p_para,
-        43 => p_prop,
-        44 => p_prop,
+        43 => p_orth,
+        44 => p_orth,
         45 => p_para,
         46 => p_para,
-        47 => p_prop,
-        48 => p_prop,
+        47 => p_orth,
+        48 => p_orth,
 
-        49 => p_prop,
-        50 => p_prop,
+        49 => p_orth,
+        50 => p_orth,
         51 => p_para,
         52 => p_para,
-        53 => p_prop,
-        54 => p_prop,
+        53 => p_orth,
+        54 => p_orth,
         55 => p_para,
         56 => p_para,
     )
@@ -916,7 +920,7 @@ function tait_swap()
         3 => (4.0, 4.0),
     )
 
-    return Tait{Phase{ComplexF64}}(g, phases, inputs, outputs, genuses, locations)
+    return Tait{QuonParam{QuonComplex}}(g, quon_params, inputs, outputs, genuses, locations)
 end
 
 function tait_cnot(ctrl, loc)

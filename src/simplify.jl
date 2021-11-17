@@ -1,8 +1,9 @@
 export simplify!
 
-
 function simulated_annealing(f, x0, temp)
     l_old = f(x0)
+    loss = l_old
+    @show loss
     candidate = copy(x0)
     for epoch in 1:1000
         # local update
@@ -18,6 +19,8 @@ function simulated_annealing(f, x0, temp)
         else
             candidate[idx] = candidate_idx_old
         end
+        loss = l_old
+        @show loss
         l_old = l_new
     end
     return candidate
@@ -28,14 +31,16 @@ function simplify_instance(tait) # -> cost
         for rule in rules
             matches = match(Rule(rule), tait)
             isempty(matches) && continue
-            rewrite!(tait, first(matches))
+            m = first(matches)
+            # @show rule, m
+            rewrite!(tait, m)
         end
         return tait_loss(tait)
     end
 end
 
 function tait_loss(q::Tait)
-    return length(q.phases)/2 + length(q.genuses) * 10
+    return length(q.quon_params)/2 + length(q.genuses) * 10
 end
 
 function simplify!(tait::Tait)
@@ -45,46 +50,15 @@ function simplify!(tait::Tait)
     return tait
 end
 
-# function simplify!(q::Tait, r::Rule{R}) where {R}
-#     ms = match(r, q)
-#     while length(ms) > 0
-#         for m in ms
-#             if check(q, m)
-#                 rewrite!(q, m)
-#             end
-#         end
-#         ms = match(r, q)
-#     end
-#     return q
-# end
-
-# function simplify!(q::Tait, rs::Vector{Rule})
-#     ms = [match(r, q) for r in rs]
-#     while any(length.(ms) .> 0)
-#         for ms_r in ms
-            
-#         end
-#     end
-# end
-
-# function naive_simplify!(q::Tait)
-#     simplify!(q, Rule(:z_fusion))
-#     simplify!(q, Rule(:x_fusion))
-#     simplify!(q, Rule(:identity))
-
-#     m_yb_star = match(Rule(:yang_baxter_star), q)
-#     @show m_yb_star
-#     if length(m_yb_star) > 0
-#         for m in m_yb_star
-#             if check(q, m)
-#                 can_simp = [length(trace_face(q, face(q, he))) == 3 for he in m.half_edges]
-#                 @show can_simp
-#                 if any(can_simp)
-#                     rewrite!(q, m)
-#                 end
-#             end
-#         end
-#     end
-#     return q
-# end
-# export naive_simplify!
+function simplify!(q::Tait, r::Rule{R}) where {R}
+    ms = match(r, q)
+    while length(ms) > 0
+        for m in ms
+            if check(q, m)
+                rewrite!(q, m)
+            end
+        end
+        ms = match(r, q)
+    end
+    return q
+end

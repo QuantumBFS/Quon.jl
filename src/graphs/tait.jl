@@ -1,11 +1,13 @@
-mutable struct Tait{P <: Phase}
+mutable struct Tait{P <: QuonParam}
     g::PlanarMultigraph
-    phases::Dict{Int, P}    # he_id => phase
+    quon_params::Dict{Int, P}    # he_id => quon_param
     inputs::Vector{Int}     # list of input vertices
     outputs::Vector{Int}    # list of output vertices
     genuses::Set{Int}   # set of vertices on genuses
     locations::Dict{Int, Tuple{Float64, Float64}}   # v -> location
 end
+
+Base.show(io::IO, q::Tait) = print(io, "Tait graph with $(nv(q)) vertices ($(length(genuses(q))) genuses), $(nhe(q)) half edges, $(nf(q)) faces")
 
 nv(q::Tait) = nv(q.g)
 ne(q::Tait) = ne(q.g)
@@ -47,16 +49,16 @@ has_face(q::Tait, id) = has_face(q.g, id)
 function add_edge!(q::Tait{P}, v1::Integer, v2::Integer, f::Integer, p::P) where P
     (new_he1, new_he2) = add_edge!(q.g, v1, v2, f)
     if !(0 in (new_he1, new_he2))
-        q.phases[new_he1] = p
-        q.phases[new_he2] = p
+        q.quon_params[new_he1] = p
+        q.quon_params[new_he2] = p
     end
     return (new_he1, new_he2)
 end
 
 function rem_vertex!(q::Tait, v::Integer; update::Bool = true)
     for he in trace_vertex(q, v)
-        delete!(q.phases, twin(q, he))
-        delete!(q.phases, he)
+        delete!(q.quon_params, twin(q, he))
+        delete!(q.quon_params, he)
     end
     rem_vertex!(q.g, v; update = update)
     deleteat!(q.inputs, findall(isequal(v), q.inputs))
@@ -70,8 +72,8 @@ end
 function rem_edge!(q::Tait, he_id::Integer; update::Bool = true)
     twin_id = twin(q, he_id)
     rem_edge!(q.g, he_id; update = update)
-    delete!(q.phases, he_id)
-    delete!(q.phases, twin_id)
+    delete!(q.quon_params, he_id)
+    delete!(q.quon_params, twin_id)
 
     return q
 end
@@ -83,8 +85,8 @@ function contract_edge!(q::Tait, he_id::Integer)
         delete!(q.genuses, v2)
         push!(q.genuses, v1)
     end
-    delete!(q.phases, he_id)
-    delete!(q.phases, twin_id)
+    delete!(q.quon_params, he_id)
+    delete!(q.quon_params, twin_id)
     (v1 != v2) && delete!(q.locations, v2)
     return q
 end
@@ -98,8 +100,8 @@ function merge_graph!(A::Tait, B::Tait; vertical::Bool = true, delta::Float64 = 
     y_max_A = maximum(ys_A)
     xs_A = [p[1] for p in values(A.locations)]
     x_max_A = maximum(xs_A)
-    for (he_id, p) in B.phases
-        A.phases[he_id + he_max_A] = p
+    for (he_id, p) in B.quon_params
+        A.quon_params[he_id + he_max_A] = p
     end
     for v in B.inputs
         push!(A.inputs, v + v_max_A)
@@ -124,18 +126,18 @@ function merge_graph!(A::Tait, B::Tait; vertical::Bool = true, delta::Float64 = 
 end
 
 Base.copy(q::Tait) = Tait(
-        copy(q.g), copy(q.phases), copy(q.inputs), copy(q.outputs),
+        copy(q.g), copy(q.quon_params), copy(q.inputs), copy(q.outputs),
         copy(q.genuses), copy(g.locations)
     )
 
-phases(q::Tait) = q.phases
-phase(q::Tait, he_id::Integer) = q.phases[he_id]
+quon_params(q::Tait) = q.quon_params
+quon_param(q::Tait, he_id::Integer) = q.quon_params[he_id]
 genuses(q::Tait) = sort!(collect(q.genuses))
 is_genus(q::Tait, v::Integer) = (v in q.genuses)
 function change_direction!(q::Tait, e_id::Integer) 
-    p = change_direction(q.phases[e_id])
-    q.phases[e_id] = p
-    q.phases[twin(q, e_id)] = p
+    p = change_direction(q.quon_params[e_id])
+    q.quon_params[e_id] = p
+    q.quon_params[twin(q, e_id)] = p
     return q
 end
 
@@ -151,7 +153,7 @@ is_open_vertex(q::Tait, v::Integer) = (v in q.inputs) || (v in q.outputs)
 
 Returns `true` if `he` is an open half edge.
 """
-is_open_half_edge(q::Tait, he::Integer) = !haskey(q.phases, he)
+is_open_half_edge(q::Tait, he::Integer) = !haskey(q.quon_params, he)
 
 function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
     length(va) == length(vb) || error("Size of the input Tait graph and the output Tait graph mismatch")
@@ -162,6 +164,7 @@ function contract!(A::Tait, B::Tait, va::Vector{Int}, vb::Vector{Int})
     return A
 end
 contract!(A::Tait, B::Tait) = contract!(A, B, copy(A.outputs), copy(B.inputs))
+contract!(A, B, C...) = contract!(contract!(A, B), C...)
 merge_graph(A::Tait, B::Tait) = merge_graph!(copy(A), B)
 
 function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
@@ -262,7 +265,7 @@ function contract_boundary_vertices!(q::Tait, va::Vector{Int}, vb::Vector{Int})
     i_ids = findall(v -> (v in q.inputs), bds)
     o_ids = findall(v -> (v in q.outputs), bds)
     if !isempty(i_ids)
-        @show i_ids
+        # @show i_ids
         if i_ids[end] - i_ids[1] + 1 == length(i_ids)
             q.inputs[:] = bds[i_ids]
         else

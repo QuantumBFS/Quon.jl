@@ -12,7 +12,6 @@ const rewrite_rules = [
     :swap_genus,
 ]
 
-
 function rewrite!(tait::Tait, m::Match{:string_genus})
     rem_vertex!(tait, m.vertices[1])
     return tait
@@ -22,7 +21,7 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_star})
     hes = m.half_edges
     v0 = m.vertices[1]
     vs = [dst(tait, he) for he in hes]
-    p1, p2, p3 = (phase(tait, he) for he in hes)
+    p1, p2, p3 = (quon_param(tait, he) for he in hes)
     q1, q2, q3 = yang_baxter_param_inv(p1, p2, p3)
     add_edge!(tait, vs[1], vs[2], face(tait, hes[1]), q1)
     add_edge!(tait, vs[1], vs[3], face(tait, hes[3]), q2)
@@ -36,7 +35,7 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_triangle})
     vs = [src(tait, he) for he in hes]
     f = face(tait, hes[1])
     for ids in [(1, 2, 3), (2, 3, 1), (3, 1, 2)]
-        p1, p2, p3 = (phase(tait, hes[ids[1]]), phase(tait, hes[ids[3]]), phase(tait, hes[ids[2]]))
+        p1, p2, p3 = (quon_param(tait, hes[ids[1]]), quon_param(tait, hes[ids[3]]), quon_param(tait, hes[ids[2]]))
         if !is_singular_yang_baxter(p1, p2, p3)
             q1, q2, q3 = yang_baxter_param(p1, p2, p3)
             new_v = add_vertex!(tait, f)
@@ -52,14 +51,14 @@ function rewrite!(tait::Tait, m::Match{:yang_baxter_triangle})
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:charge_rm_v})
+function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:charge_rm_v}) where T
     hes = m.half_edges
     v = m.vertices[1]
-    p0 = Phase(0.0*im, true)
+    p0 = QuonParam{T}(zero(T), true)
     if (σ_inv(tait, hes[1]) == hes[end]) || (length(hes) == 1)
         for he in hes
-            tait.phases[he] = p0
-            tait.phases[twin(tait, he)] = p0
+            tait.quon_params[he] = p0
+            tait.quon_params[twin(tait, he)] = p0
             rewrite!(tait, Match{:identity}([], [he]))
         end
         return tait
@@ -81,11 +80,11 @@ function rewrite!(tait::Tait, m::Match{:charge_rm_v})
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:charge_rm_f})
+function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:charge_rm_f}) where T
     hes = m.half_edges
     f = face(tait, hes[1])
     if next(tait, hes[end]) != hes[1]
-        add_edge!(tait, src(tait, hes[1]), dst(tait, hes[end]), f, Phase(pi*im, false))
+        add_edge!(tait, src(tait, hes[1]), dst(tait, hes[end]), f, QuonParam{T}(Pi, false))
     end
     for he in hes
         rem_edge!(tait, he; update = true)
@@ -93,38 +92,34 @@ function rewrite!(tait::Tait, m::Match{:charge_rm_f})
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:z_fusion})
+function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:z_fusion}) where T
     he1, he2 = m.half_edges
     twin1 = twin(tait, he1)
     twin2 = twin(tait, he2)
-    p1 = phase(tait, he1)
-    p2 = phase(tait, he2)
-    !p1.isparallel || (p1 = change_direction(p1))
-    !p2.isparallel || (p2 = change_direction(p2))
-    p = p1 + p2
-    p0 = Phase{typeof(p2.param)}(zero(p2.param), false)
-    tait.phases[he1] = p
-    tait.phases[twin1] = p
-    tait.phases[he2] = p0
-    tait.phases[twin2] = p0
+    p1 = quon_param(tait, he1)
+    p2 = quon_param(tait, he2)
+    p = add_orthorgonal(p1, p2)
+    p0 = QuonParam{T}(zero(p2.param), false)
+    tait.quon_params[he1] = p
+    tait.quon_params[twin1] = p
+    tait.quon_params[he2] = p0
+    tait.quon_params[twin2] = p0
     rewrite!(tait, Match{:identity}([], [he2]))
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:x_fusion})
+function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:x_fusion}) where T
     he1, he2 = m.half_edges
     twin1 = twin(tait, he1)
     twin2 = twin(tait, he2)
-    p1 = phase(tait, he1)
-    p2 = phase(tait, he2)
-    p1.isparallel || (p1 = change_direction(p1))
-    p2.isparallel || (p2 = change_direction(p2))
-    p = p1 + p2
-    p0 = Phase{typeof(p2.param)}(zero(p2.param), true)
-    tait.phases[he1] = p
-    tait.phases[twin1] = p
-    tait.phases[he2] = p0
-    tait.phases[twin2] = p0
+    p1 = quon_param(tait, he1)
+    p2 = quon_param(tait, he2)
+    p = add_parallel(p1, p2)
+    p0 = QuonParam{T}(zero(p2.param), true)
+    tait.quon_params[he1] = p
+    tait.quon_params[twin1] = p
+    tait.quon_params[he2] = p0
+    tait.quon_params[twin2] = p0
     rewrite!(tait, Match{:identity}([], [he2]))
     return tait
 end
@@ -133,15 +128,15 @@ function rewrite!(tait::Tait, m::Match{:perm_rz})
     v_ct, v_g = m.vertices
     f = face(tait, m.half_edges[2])
     old_he = m.half_edges[1]
-    add_edge!(tait, v_ct, v_g, f, phase(tait, old_he))
+    add_edge!(tait, v_ct, v_g, f, quon_param(tait, old_he))
     rem_edge!(tait, old_he; update = true)
     return tait
 end
 
 function rewrite!(tait::Tait, m::Match{:identity})
     he = m.half_edges[1]
-    p = phase(tait, he)
-    isapprox(0, p.param; atol = quon_atol) || (p = change_direction(p))
+    p = quon_param(tait, he)
+    is_zero(p.param) || (p = change_direction(p))
     if is_parallel(p)
         contract_edge!(tait, he)
     else
@@ -150,11 +145,11 @@ function rewrite!(tait::Tait, m::Match{:identity})
     return tait
 end
 
-function rewrite!(tait::Tait, m::Match{:genus_fusion})
+function rewrite!(tait::Tait{QuonParam{T}}, m::Match{:genus_fusion}) where T
     he_g1, _ = m.half_edges
     g1, g2 = m.vertices
     f = face(tait, he_g1)
-    new_he1, _ = add_edge!(tait, g1, g2, f, Phase(0.0im, true))
+    new_he1, _ = add_edge!(tait, g1, g2, f, QuonParam{T}(zero(T), true))
     rewrite!(tait, Match{:identity}([], [new_he1]))
 end
 
