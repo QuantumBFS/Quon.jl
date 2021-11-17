@@ -79,11 +79,11 @@ end
 
 
 is_pi(p::QuonConst) = (p === Pi)
-is_zero(p::QuonConst) = (p == Zero)
-is_half_pi(p::QuonConst) = (p == HalfPi)
-is_neg_half_pi(p::QuonConst) = (p == NegHalfPi)
-is_inf_pi(p::QuonConst) = (p == InfPi)
-is_inf_zero(p::QuonConst) = (p == InfZero)
+is_zero(p::QuonConst) = (p === Zero)
+is_half_pi(p::QuonConst) = (p === HalfPi)
+is_neg_half_pi(p::QuonConst) = (p === NegHalfPi)
+is_inf_pi(p::QuonConst) = (p === InfPi)
+is_inf_zero(p::QuonConst) = (p === InfZero)
 
 to_quon_const(p::QuonConst) = p
 function to_quon_const(p::Complex)
@@ -134,7 +134,7 @@ function yang_baxter_param(α::QuonConst, β::QuonConst, γ::QuonComplex)
     if α === Zero
         return to_quon_const(β), to_quon_const(γ), Zero
     elseif α === Pi
-        return to_quon_const(-β), γ+Pi, Zero
+        return -β, γ+Pi, Zero
     elseif α === InfZero
         return Zero, InfZero, change_direction(change_direction(β) + γ)
     elseif α === InfPi
@@ -159,7 +159,7 @@ end
 
 function yang_baxter_param(α::QuonConst, β::QuonComplex, γ::QuonConst)
     if α === Zero
-        return to_quon_const(β), to_quon_const(γ), Zero
+        return to_quon_const(β), γ, Zero
     elseif α === Pi
         return to_quon_const(-β), γ+Pi, Zero
     elseif α === InfZero
@@ -168,7 +168,7 @@ function yang_baxter_param(α::QuonConst, β::QuonComplex, γ::QuonConst)
         return Pi, InfZero, change_direction(-change_direction(β) + γ)
     end
     if γ === Zero
-        return Zero, to_quon_const(α), to_quon_const(β)
+        return Zero, α, to_quon_const(β)
     elseif γ === Pi
         return Zero, α+Pi, to_quon_const(-β)
     elseif γ === InfZero
@@ -201,9 +201,9 @@ function yang_baxter_param(α::QuonConst, β::QuonConst, γ::QuonConst)
         end
     end
     if α === Zero
-        return to_quon_const(β), to_quon_const(γ), Zero
+        return β, γ, Zero
     elseif α === Pi
-        return to_quon_const(-β), γ+Pi, Zero
+        return -β, γ+Pi, Zero
     elseif α === InfZero
         return Zero, InfZero, change_direction(change_direction(β) + γ)
     elseif α === InfPi
@@ -219,9 +219,9 @@ function yang_baxter_param(α::QuonConst, β::QuonConst, γ::QuonConst)
         return -change_direction(α), InfZero, -change_direction(γ)
     end
     if γ === Zero
-        return Zero, to_quon_const(α), to_quon_const(β)
+        return Zero, α, β
     elseif γ === Pi
-        return Zero, α+Pi, to_quon_const(-β)
+        return Zero, α+Pi, -β
     elseif γ === InfZero
         return change_direction(change_direction(β) + α), InfZero, Zero
     elseif γ === InfPi
