@@ -14,6 +14,7 @@ ZXCalculus = "3525faa3-032d-4235-a8d4-8c2939a218dd"
 
 [compat]
 Compose = "0.9"
+Multigraphs = "0.3"
 NetworkLayout = "0.4"
 PlanarMaps = "0.1"
 YaoPlots = "0.6"
