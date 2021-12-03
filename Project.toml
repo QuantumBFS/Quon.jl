@@ -18,6 +18,7 @@ Multigraphs = "0.3"
 NetworkLayout = "0.4"
 PlanarMaps = "0.1"
 YaoPlots = "0.6"
+ZXCalculus = "0.5"
 julia = "1.6"
 
 [extras]
