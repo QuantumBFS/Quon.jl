@@ -17,7 +17,7 @@ Compose = "0.9"
 Multigraphs = "0.3"
 NetworkLayout = "0.4"
 PlanarMaps = "0.1"
-YaoPlots = "0.6"
+YaoPlots = "0.6, 0.7"
 julia = "1.6"
 
 [extras]
